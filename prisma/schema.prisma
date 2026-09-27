@@ -1,0 +1,565 @@
+// MarkazOS — Prisma schema
+// Local dev uses SQLite (zero setup). For production on Supabase/Postgres,
+// switch `provider` to "postgresql", set DATABASE_URL/DIRECT_URL, and (optionally)
+// promote the string status/role/type/method columns to native Postgres enums.
+// Enum-style columns are validated at the app layer (zod + domain guards).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ── Platform-level ────────────────────────────────────────────
+// SubscriptionStatus: TRIAL | ACTIVE | PAST_DUE | EXPIRED | CANCELLED | SUSPENDED
+
+model Tenant {
+  id             String             @id @default(cuid())
+  name           String
+  businessName   String
+  businessType   String?
+  logo           String?
+  phone          String?
+  email          String?
+  address        String?
+  currency       String             @default("PKR")
+  timezone       String             @default("Asia/Karachi")
+  status         String             @default("active")
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  users          User[]
+  roles          Role[]
+  branches       Branch[]
+  products       Product[]
+  categories     Category[]
+  brands         Brand[]
+  inventory      Inventory[]
+  invTx          InventoryTransaction[]
+  customers      Customer[]
+  ledger         CustomerLedger[]
+  suppliers      Supplier[]
+  sales          Sale[]
+  payments       Payment[]
+  purchases      Purchase[]
+  expenses       Expense[]
+  terminals      PaymentTerminal[]
+  reconciliations Reconciliation[]
+  campaigns      Campaign[]
+  notifications  Notification[]
+  auditLogs      AuditLog[]
+  subscription   Subscription?
+  settings       StoreSetting?
+}
+
+model PlatformAdmin {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+}
+
+model PlatformSetting {
+  id           String   @id @default("singleton")
+  themeKey     String   @default("slate")
+  brandName    String   @default("MarkazOS")
+  updatedAt    DateTime @updatedAt
+}
+
+model Plan {
+  id            String   @id @default(cuid())
+  key           String   @unique
+  name          String
+  priceMonthly  Int
+  priceYearly   Int
+  features      String   // JSON string of feature flags + limits
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  subscriptions Subscription[]
+}
+
+model Subscription {
+  id              String   @id @default(cuid())
+  tenantId        String   @unique
+  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  planId          String
+  plan            Plan     @relation(fields: [planId], references: [id])
+  status          String   @default("TRIAL")
+  billingCycle    String   @default("monthly")
+  currentPeriodEnd DateTime?
+  trialEndsAt     DateTime?
+  gracePeriodDays Int      @default(7)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  invoices        SubscriptionInvoice[]
+}
+
+model SubscriptionInvoice {
+  id             String       @id @default(cuid())
+  subscriptionId String
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  amount         Int
+  status         String       @default("open")
+  issuedAt       DateTime     @default(now())
+  paidAt         DateTime?
+}
+
+// ── Access control ────────────────────────────────────────────
+// UserRole: SUPER_ADMIN | OWNER | MANAGER | CASHIER
+
+model User {
+  id           String    @id @default(cuid())
+  tenantId     String
+  tenant       Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name         String
+  email        String?
+  phone        String
+  passwordHash String
+  role         String    @default("CASHIER")
+  roleId       String?
+  customRole   Role?     @relation(fields: [roleId], references: [id])
+  status       String    @default("active")
+  lastLogin    DateTime?
+  createdAt    DateTime  @default(now())
+
+  sales        Sale[]
+  auditLogs    AuditLog[]
+
+  @@unique([tenantId, phone])
+  @@index([tenantId])
+}
+
+model Role {
+  id          String           @id @default(cuid())
+  tenantId    String
+  tenant      Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name        String
+  permissions RolePermission[]
+  users       User[]
+
+  @@index([tenantId])
+}
+
+model Permission {
+  id    String           @id @default(cuid())
+  name  String           @unique
+  roles RolePermission[]
+}
+
+model RolePermission {
+  roleId       String
+  permissionId String
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+}
+
+model Branch {
+  id        String   @id @default(cuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name      String
+  address   String?
+  phone     String?
+  status    String   @default("active")
+  createdAt DateTime @default(now())
+
+  inventory Inventory[]
+  invTx     InventoryTransaction[]
+  sales     Sale[]
+  purchases Purchase[]
+  expenses  Expense[]
+  terminals PaymentTerminal[]
+
+  @@index([tenantId])
+}
+
+// ── Catalog & inventory ───────────────────────────────────────
+
+model Category {
+  id       String    @id @default(cuid())
+  tenantId String
+  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name     String
+  products Product[]
+
+  @@index([tenantId])
+}
+
+model Brand {
+  id       String    @id @default(cuid())
+  tenantId String
+  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name     String
+  products Product[]
+
+  @@index([tenantId])
+}
+
+model Product {
+  id            String        @id @default(cuid())
+  tenantId      String
+  tenant        Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  categoryId    String?
+  category      Category?     @relation(fields: [categoryId], references: [id])
+  brandId       String?
+  brand         Brand?        @relation(fields: [brandId], references: [id])
+  sku           String?
+  barcode       String?
+  name          String
+  description   String?
+  image         String?
+  baseUnit      String        @default("piece")
+  purchasePrice Int           @default(0)
+  sellingPrice  Int           @default(0)
+  wholesalePrice Int          @default(0)
+  minimumStock  Int           @default(0)
+  taxRate       Float         @default(0)
+  status        String        @default("active")
+  createdAt     DateTime      @default(now())
+
+  units         ProductUnit[]
+  inventory     Inventory[]
+  invTx         InventoryTransaction[]
+  saleItems     SaleItem[]
+  purchaseItems PurchaseItem[]
+
+  @@index([tenantId])
+  @@index([tenantId, barcode])
+  @@index([tenantId, sku])
+}
+
+model ProductUnit {
+  id              String  @id @default(cuid())
+  productId       String
+  product         Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  unitName        String
+  conversionToBase Int
+  sellingPrice    Int     @default(0)
+}
+
+model Inventory {
+  id               String   @id @default(cuid())
+  tenantId         String
+  tenant           Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branchId         String
+  branch           Branch   @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  productId        String
+  product          Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  quantity         Int      @default(0)
+  reservedQuantity Int      @default(0)
+  updatedAt        DateTime @updatedAt
+
+  @@unique([branchId, productId])
+  @@index([tenantId])
+}
+
+// InvTxType: PURCHASE | SALE | RETURN | ADJUSTMENT | DAMAGE | TRANSFER
+model InventoryTransaction {
+  id            String    @id @default(cuid())
+  tenantId      String
+  tenant        Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branchId      String
+  branch        Branch    @relation(fields: [branchId], references: [id])
+  productId     String
+  product       Product   @relation(fields: [productId], references: [id])
+  type          String
+  quantity      Int
+  referenceType String?
+  referenceId   String?
+  unitCost      Int       @default(0)
+  createdBy     String?
+  createdAt     DateTime  @default(now())
+
+  @@index([tenantId])
+  @@index([productId])
+}
+
+// ── Customers & ledger ────────────────────────────────────────
+
+model Customer {
+  id            String           @id @default(cuid())
+  tenantId      String
+  tenant        Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name          String
+  phone         String
+  whatsappPhone String?
+  email         String?
+  address       String?
+  notes         String?
+  status        String           @default("active")
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  ledger        CustomerLedger[]
+  sales         Sale[]
+
+  @@unique([tenantId, phone])
+  @@index([tenantId])
+}
+
+// LedgerType: SALE | PAYMENT | REFUND | ADJUSTMENT
+model CustomerLedger {
+  id          String   @id @default(cuid())
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customerId  String
+  customer    Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  type        String
+  referenceId String?
+  debit       Int      @default(0)
+  credit      Int      @default(0)
+  balance     Int      @default(0)
+  notes       String?
+  date        DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([customerId])
+}
+
+// ── Suppliers & purchases ─────────────────────────────────────
+
+model Supplier {
+  id        String     @id @default(cuid())
+  tenantId  String
+  tenant    Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name      String
+  phone     String?
+  whatsapp  String?
+  email     String?
+  address   String?
+  notes     String?
+  createdAt DateTime   @default(now())
+  purchases Purchase[]
+
+  @@index([tenantId])
+}
+
+model Purchase {
+  id          String         @id @default(cuid())
+  tenantId    String
+  tenant      Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branchId    String
+  branch      Branch         @relation(fields: [branchId], references: [id])
+  supplierId  String?
+  supplier    Supplier?      @relation(fields: [supplierId], references: [id])
+  reference   String?
+  subtotal    Int            @default(0)
+  discount    Int            @default(0)
+  tax         Int            @default(0)
+  total       Int            @default(0)
+  paidAmount  Int            @default(0)
+  status      String         @default("completed")
+  createdAt   DateTime       @default(now())
+  items       PurchaseItem[]
+
+  @@index([tenantId])
+}
+
+model PurchaseItem {
+  id         String   @id @default(cuid())
+  purchaseId String
+  purchase   Purchase @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  productId  String
+  product    Product  @relation(fields: [productId], references: [id])
+  quantity   Int
+  unitCost   Int
+  total      Int
+}
+
+// ── Sales, payments, invoices ─────────────────────────────────
+
+model Sale {
+  id                String     @id @default(cuid())
+  tenantId          String
+  tenant            Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branchId          String
+  branch            Branch     @relation(fields: [branchId], references: [id])
+  invoiceNumber     String
+  customerId        String?
+  customer          Customer?  @relation(fields: [customerId], references: [id])
+  subtotal          Int        @default(0)
+  discount          Int        @default(0)
+  tax               Int        @default(0)
+  total             Int        @default(0)
+  paidAmount        Int        @default(0)
+  outstandingAmount Int        @default(0)
+  status            String     @default("completed")
+  cashierId         String?
+  cashier           User?      @relation(fields: [cashierId], references: [id])
+  createdAt         DateTime   @default(now())
+
+  items    SaleItem[]
+  payments Payment[]
+  returns  SaleReturn[]
+
+  @@unique([tenantId, invoiceNumber])
+  @@index([tenantId])
+}
+
+model SaleItem {
+  id        String  @id @default(cuid())
+  saleId    String
+  sale      Sale    @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Int
+  unit      String  @default("piece")
+  unitPrice Int
+  discount  Int     @default(0)
+  tax       Int     @default(0)
+  total     Int
+  unitCost  Int     @default(0)
+}
+
+// PaymentMethod: CASH | CARD | BANK | ONLINE | CREDIT | OTHER
+model Payment {
+  id         String        @id @default(cuid())
+  tenantId   String
+  tenant     Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  saleId     String?
+  sale       Sale?         @relation(fields: [saleId], references: [id])
+  method     String
+  amount     Int
+  terminalId String?
+  terminal   PaymentTerminal? @relation(fields: [terminalId], references: [id])
+  reference  String?
+  createdAt  DateTime      @default(now())
+
+  @@index([tenantId])
+}
+
+model SaleReturn {
+  id          String   @id @default(cuid())
+  saleId      String
+  sale        Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  refundAmount Int
+  reason      String?
+  createdAt   DateTime @default(now())
+}
+
+model PaymentTerminal {
+  id                 String           @id @default(cuid())
+  tenantId           String
+  tenant             Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branchId           String?
+  branch             Branch?          @relation(fields: [branchId], references: [id])
+  name               String
+  provider           String?
+  terminalIdentifier String?
+  status             String           @default("active")
+  payments           Payment[]
+  reconciliations    Reconciliation[]
+
+  @@index([tenantId])
+}
+
+model Reconciliation {
+  id             String          @id @default(cuid())
+  tenantId       String
+  tenant         Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  terminalId     String
+  terminal       PaymentTerminal @relation(fields: [terminalId], references: [id])
+  date           DateTime
+  expectedAmount Int
+  actualAmount   Int
+  difference     Int
+  notes          String?
+  reconciledBy   String?
+  reconciledAt   DateTime        @default(now())
+
+  @@index([tenantId])
+}
+
+// ── Expenses ──────────────────────────────────────────────────
+
+model Expense {
+  id          String   @id @default(cuid())
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branchId    String?
+  branch      Branch?  @relation(fields: [branchId], references: [id])
+  category    String
+  amount      Int
+  date        DateTime @default(now())
+  method      String   @default("CASH")
+  description String?
+  attachment  String?
+  createdBy   String?
+  createdAt   DateTime @default(now())
+
+  @@index([tenantId])
+}
+
+// ── Marketing & notifications ─────────────────────────────────
+
+model Campaign {
+  id            String   @id @default(cuid())
+  tenantId      String
+  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name          String
+  message       String
+  targetSegment String
+  channel       String   @default("whatsapp")
+  scheduledAt   DateTime?
+  status        String   @default("draft")
+  createdBy     String?
+  createdAt     DateTime @default(now())
+
+  @@index([tenantId])
+}
+
+model Notification {
+  id            String    @id @default(cuid())
+  tenantId      String
+  tenant        Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  recipient     String
+  channel       String
+  type          String
+  status        String    @default("queued")
+  message       String
+  scheduledAt   DateTime?
+  sentAt        DateTime?
+  failureReason String?
+  createdAt     DateTime  @default(now())
+
+  @@index([tenantId])
+}
+
+// ── Settings & audit ──────────────────────────────────────────
+
+model StoreSetting {
+  id               String  @id @default(cuid())
+  tenantId         String  @unique
+  tenant           Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  invoicePrefix    String  @default("INV")
+  nextInvoiceNo    Int     @default(1)
+  taxEnabled       Boolean @default(false)
+  defaultTaxRate   Float   @default(0)
+  receiptWidth     String  @default("80mm")
+  paymentMethods   String  @default("CASH,CARD,BANK,CREDIT")
+  notifyOnDue      Boolean @default(true)
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  tenantId   String
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id])
+  action     String
+  entity     String
+  entityId   String?
+  oldValue   String?  // JSON string
+  newValue   String?  // JSON string
+  ip         String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  @@index([tenantId])
+}

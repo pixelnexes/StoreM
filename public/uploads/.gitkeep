@@ -1,0 +1,2 @@
+# Product images are uploaded here at runtime.
+# On a VPS/Docker host, mount this folder as a volume to persist images.
