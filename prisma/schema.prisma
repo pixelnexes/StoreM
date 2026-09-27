@@ -1,15 +1,22 @@
 // MarkazOS — Prisma schema
-// Local dev uses SQLite (zero setup). For production on Supabase/Postgres,
-// switch `provider` to "postgresql", set DATABASE_URL/DIRECT_URL, and (optionally)
-// promote the string status/role/type/method columns to native Postgres enums.
-// Enum-style columns are validated at the app layer (zod + domain guards).
+// Datasource is MySQL (wire-compatible with MariaDB, which is what Hostinger Web /
+// Cloud hosting runs). Set DATABASE_URL to the MySQL host hPanel shows you — for a
+// Node.js app use the server hostname (e.g. srv1517.hstgr.io), NOT `localhost`.
+//
+// Enum-style columns (status/role/type/method) are plain strings on purpose, so the
+// same schema also works on Postgres by flipping `provider` to "postgresql". Values
+// are validated at the app layer (zod + domain guards).
+//
+// Free-form, unbounded columns are annotated `@db.Text`. Without it MySQL would map
+// every String to VARCHAR(191) and silently reject long values (audit-log JSON,
+// marketing messages, addresses, notes).
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
@@ -17,42 +24,42 @@ datasource db {
 // SubscriptionStatus: TRIAL | ACTIVE | PAST_DUE | EXPIRED | CANCELLED | SUSPENDED
 
 model Tenant {
-  id             String             @id @default(cuid())
-  name           String
-  businessName   String
-  businessType   String?
-  logo           String?
-  phone          String?
-  email          String?
-  address        String?
-  currency       String             @default("PKR")
-  timezone       String             @default("Asia/Karachi")
-  status         String             @default("active")
-  createdAt      DateTime           @default(now())
-  updatedAt      DateTime           @updatedAt
+  id           String   @id @default(cuid())
+  name         String
+  businessName String
+  businessType String?
+  logo         String?
+  phone        String?
+  email        String?
+  address      String?  @db.Text
+  currency     String   @default("PKR")
+  timezone     String   @default("Asia/Karachi")
+  status       String   @default("active")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-  users          User[]
-  roles          Role[]
-  branches       Branch[]
-  products       Product[]
-  categories     Category[]
-  brands         Brand[]
-  inventory      Inventory[]
-  invTx          InventoryTransaction[]
-  customers      Customer[]
-  ledger         CustomerLedger[]
-  suppliers      Supplier[]
-  sales          Sale[]
-  payments       Payment[]
-  purchases      Purchase[]
-  expenses       Expense[]
-  terminals      PaymentTerminal[]
+  users           User[]
+  roles           Role[]
+  branches        Branch[]
+  products        Product[]
+  categories      Category[]
+  brands          Brand[]
+  inventory       Inventory[]
+  invTx           InventoryTransaction[]
+  customers       Customer[]
+  ledger          CustomerLedger[]
+  suppliers       Supplier[]
+  sales           Sale[]
+  payments        Payment[]
+  purchases       Purchase[]
+  expenses        Expense[]
+  terminals       PaymentTerminal[]
   reconciliations Reconciliation[]
-  campaigns      Campaign[]
-  notifications  Notification[]
-  auditLogs      AuditLog[]
-  subscription   Subscription?
-  settings       StoreSetting?
+  campaigns       Campaign[]
+  notifications   Notification[]
+  auditLogs       AuditLog[]
+  subscription    Subscription?
+  settings        StoreSetting?
 }
 
 model PlatformAdmin {
@@ -64,38 +71,38 @@ model PlatformAdmin {
 }
 
 model PlatformSetting {
-  id           String   @id @default("singleton")
-  themeKey     String   @default("slate")
-  brandName    String   @default("MarkazOS")
-  updatedAt    DateTime @updatedAt
+  id        String   @id @default("singleton")
+  themeKey  String   @default("slate")
+  brandName String   @default("MarkazOS")
+  updatedAt DateTime @updatedAt
 }
 
 model Plan {
-  id            String   @id @default(cuid())
-  key           String   @unique
+  id            String         @id @default(cuid())
+  key           String         @unique
   name          String
   priceMonthly  Int
   priceYearly   Int
-  features      String   // JSON string of feature flags + limits
-  active        Boolean  @default(true)
-  createdAt     DateTime @default(now())
+  features      String // JSON string of feature flags + limits
+  active        Boolean        @default(true)
+  createdAt     DateTime       @default(now())
   subscriptions Subscription[]
 }
 
 model Subscription {
-  id              String   @id @default(cuid())
-  tenantId        String   @unique
-  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  planId          String
-  plan            Plan     @relation(fields: [planId], references: [id])
-  status          String   @default("TRIAL")
-  billingCycle    String   @default("monthly")
+  id               String                @id @default(cuid())
+  tenantId         String                @unique
+  tenant           Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  planId           String
+  plan             Plan                  @relation(fields: [planId], references: [id])
+  status           String                @default("TRIAL")
+  billingCycle     String                @default("monthly")
   currentPeriodEnd DateTime?
-  trialEndsAt     DateTime?
-  gracePeriodDays Int      @default(7)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  invoices        SubscriptionInvoice[]
+  trialEndsAt      DateTime?
+  gracePeriodDays  Int                   @default(7)
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+  invoices         SubscriptionInvoice[]
 }
 
 model SubscriptionInvoice {
@@ -126,8 +133,8 @@ model User {
   lastLogin    DateTime?
   createdAt    DateTime  @default(now())
 
-  sales        Sale[]
-  auditLogs    AuditLog[]
+  sales     Sale[]
+  auditLogs AuditLog[]
 
   @@unique([tenantId, phone])
   @@index([tenantId])
@@ -164,7 +171,7 @@ model Branch {
   tenantId  String
   tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   name      String
-  address   String?
+  address   String?  @db.Text
   phone     String?
   status    String   @default("active")
   createdAt DateTime @default(now())
@@ -202,26 +209,26 @@ model Brand {
 }
 
 model Product {
-  id            String        @id @default(cuid())
-  tenantId      String
-  tenant        Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  categoryId    String?
-  category      Category?     @relation(fields: [categoryId], references: [id])
-  brandId       String?
-  brand         Brand?        @relation(fields: [brandId], references: [id])
-  sku           String?
-  barcode       String?
-  name          String
-  description   String?
-  image         String?
-  baseUnit      String        @default("piece")
-  purchasePrice Int           @default(0)
-  sellingPrice  Int           @default(0)
-  wholesalePrice Int          @default(0)
-  minimumStock  Int           @default(0)
-  taxRate       Float         @default(0)
-  status        String        @default("active")
-  createdAt     DateTime      @default(now())
+  id             String    @id @default(cuid())
+  tenantId       String
+  tenant         Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  categoryId     String?
+  category       Category? @relation(fields: [categoryId], references: [id])
+  brandId        String?
+  brand          Brand?    @relation(fields: [brandId], references: [id])
+  sku            String?
+  barcode        String?
+  name           String
+  description    String?   @db.Text
+  image          String?
+  baseUnit       String    @default("piece")
+  purchasePrice  Int       @default(0)
+  sellingPrice   Int       @default(0)
+  wholesalePrice Int       @default(0)
+  minimumStock   Int       @default(0)
+  taxRate        Float     @default(0)
+  status         String    @default("active")
+  createdAt      DateTime  @default(now())
 
   units         ProductUnit[]
   inventory     Inventory[]
@@ -235,12 +242,12 @@ model Product {
 }
 
 model ProductUnit {
-  id              String  @id @default(cuid())
-  productId       String
-  product         Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-  unitName        String
+  id               String  @id @default(cuid())
+  productId        String
+  product          Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  unitName         String
   conversionToBase Int
-  sellingPrice    Int     @default(0)
+  sellingPrice     Int     @default(0)
 }
 
 model Inventory {
@@ -261,20 +268,20 @@ model Inventory {
 
 // InvTxType: PURCHASE | SALE | RETURN | ADJUSTMENT | DAMAGE | TRANSFER
 model InventoryTransaction {
-  id            String    @id @default(cuid())
+  id            String   @id @default(cuid())
   tenantId      String
-  tenant        Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   branchId      String
-  branch        Branch    @relation(fields: [branchId], references: [id])
+  branch        Branch   @relation(fields: [branchId], references: [id])
   productId     String
-  product       Product   @relation(fields: [productId], references: [id])
+  product       Product  @relation(fields: [productId], references: [id])
   type          String
   quantity      Int
   referenceType String?
   referenceId   String?
-  unitCost      Int       @default(0)
+  unitCost      Int      @default(0)
   createdBy     String?
-  createdAt     DateTime  @default(now())
+  createdAt     DateTime @default(now())
 
   @@index([tenantId])
   @@index([productId])
@@ -283,21 +290,21 @@ model InventoryTransaction {
 // ── Customers & ledger ────────────────────────────────────────
 
 model Customer {
-  id            String           @id @default(cuid())
+  id            String   @id @default(cuid())
   tenantId      String
-  tenant        Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   name          String
   phone         String
   whatsappPhone String?
   email         String?
-  address       String?
-  notes         String?
-  status        String           @default("active")
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
+  address       String?  @db.Text
+  notes         String?  @db.Text
+  status        String   @default("active")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
-  ledger        CustomerLedger[]
-  sales         Sale[]
+  ledger CustomerLedger[]
+  sales  Sale[]
 
   @@unique([tenantId, phone])
   @@index([tenantId])
@@ -332,8 +339,8 @@ model Supplier {
   phone     String?
   whatsapp  String?
   email     String?
-  address   String?
-  notes     String?
+  address   String?    @db.Text
+  notes     String?    @db.Text
   createdAt DateTime   @default(now())
   purchases Purchase[]
 
@@ -341,22 +348,22 @@ model Supplier {
 }
 
 model Purchase {
-  id          String         @id @default(cuid())
-  tenantId    String
-  tenant      Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  branchId    String
-  branch      Branch         @relation(fields: [branchId], references: [id])
-  supplierId  String?
-  supplier    Supplier?      @relation(fields: [supplierId], references: [id])
-  reference   String?
-  subtotal    Int            @default(0)
-  discount    Int            @default(0)
-  tax         Int            @default(0)
-  total       Int            @default(0)
-  paidAmount  Int            @default(0)
-  status      String         @default("completed")
-  createdAt   DateTime       @default(now())
-  items       PurchaseItem[]
+  id         String         @id @default(cuid())
+  tenantId   String
+  tenant     Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branchId   String
+  branch     Branch         @relation(fields: [branchId], references: [id])
+  supplierId String?
+  supplier   Supplier?      @relation(fields: [supplierId], references: [id])
+  reference  String?
+  subtotal   Int            @default(0)
+  discount   Int            @default(0)
+  tax        Int            @default(0)
+  total      Int            @default(0)
+  paidAmount Int            @default(0)
+  status     String         @default("completed")
+  createdAt  DateTime       @default(now())
+  items      PurchaseItem[]
 
   @@index([tenantId])
 }
@@ -375,24 +382,24 @@ model PurchaseItem {
 // ── Sales, payments, invoices ─────────────────────────────────
 
 model Sale {
-  id                String     @id @default(cuid())
+  id                String    @id @default(cuid())
   tenantId          String
-  tenant            Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant            Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   branchId          String
-  branch            Branch     @relation(fields: [branchId], references: [id])
+  branch            Branch    @relation(fields: [branchId], references: [id])
   invoiceNumber     String
   customerId        String?
-  customer          Customer?  @relation(fields: [customerId], references: [id])
-  subtotal          Int        @default(0)
-  discount          Int        @default(0)
-  tax               Int        @default(0)
-  total             Int        @default(0)
-  paidAmount        Int        @default(0)
-  outstandingAmount Int        @default(0)
-  status            String     @default("completed")
+  customer          Customer? @relation(fields: [customerId], references: [id])
+  subtotal          Int       @default(0)
+  discount          Int       @default(0)
+  tax               Int       @default(0)
+  total             Int       @default(0)
+  paidAmount        Int       @default(0)
+  outstandingAmount Int       @default(0)
+  status            String    @default("completed")
   cashierId         String?
-  cashier           User?      @relation(fields: [cashierId], references: [id])
-  createdAt         DateTime   @default(now())
+  cashier           User?     @relation(fields: [cashierId], references: [id])
+  createdAt         DateTime  @default(now())
 
   items    SaleItem[]
   payments Payment[]
@@ -419,28 +426,28 @@ model SaleItem {
 
 // PaymentMethod: CASH | CARD | BANK | ONLINE | CREDIT | OTHER
 model Payment {
-  id         String        @id @default(cuid())
+  id         String           @id @default(cuid())
   tenantId   String
-  tenant     Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant     Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   saleId     String?
-  sale       Sale?         @relation(fields: [saleId], references: [id])
+  sale       Sale?            @relation(fields: [saleId], references: [id])
   method     String
   amount     Int
   terminalId String?
   terminal   PaymentTerminal? @relation(fields: [terminalId], references: [id])
   reference  String?
-  createdAt  DateTime      @default(now())
+  createdAt  DateTime         @default(now())
 
   @@index([tenantId])
 }
 
 model SaleReturn {
-  id          String   @id @default(cuid())
-  saleId      String
-  sale        Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  id           String   @id @default(cuid())
+  saleId       String
+  sale         Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
   refundAmount Int
-  reason      String?
-  createdAt   DateTime @default(now())
+  reason       String?  @db.Text
+  createdAt    DateTime @default(now())
 }
 
 model PaymentTerminal {
@@ -469,7 +476,7 @@ model Reconciliation {
   expectedAmount Int
   actualAmount   Int
   difference     Int
-  notes          String?
+  notes          String?         @db.Text
   reconciledBy   String?
   reconciledAt   DateTime        @default(now())
 
@@ -488,7 +495,7 @@ model Expense {
   amount      Int
   date        DateTime @default(now())
   method      String   @default("CASH")
-  description String?
+  description String?  @db.Text
   attachment  String?
   createdBy   String?
   createdAt   DateTime @default(now())
@@ -499,17 +506,17 @@ model Expense {
 // ── Marketing & notifications ─────────────────────────────────
 
 model Campaign {
-  id            String   @id @default(cuid())
+  id            String    @id @default(cuid())
   tenantId      String
-  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant        Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   name          String
-  message       String
+  message       String    @db.Text
   targetSegment String
-  channel       String   @default("whatsapp")
+  channel       String    @default("whatsapp")
   scheduledAt   DateTime?
-  status        String   @default("draft")
+  status        String    @default("draft")
   createdBy     String?
-  createdAt     DateTime @default(now())
+  createdAt     DateTime  @default(now())
 
   @@index([tenantId])
 }
@@ -522,10 +529,10 @@ model Notification {
   channel       String
   type          String
   status        String    @default("queued")
-  message       String
+  message       String    @db.Text
   scheduledAt   DateTime?
   sentAt        DateTime?
-  failureReason String?
+  failureReason String?   @db.Text
   createdAt     DateTime  @default(now())
 
   @@index([tenantId])
@@ -534,32 +541,32 @@ model Notification {
 // ── Settings & audit ──────────────────────────────────────────
 
 model StoreSetting {
-  id               String  @id @default(cuid())
-  tenantId         String  @unique
-  tenant           Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  invoicePrefix    String  @default("INV")
-  nextInvoiceNo    Int     @default(1)
-  taxEnabled       Boolean @default(false)
-  defaultTaxRate   Float   @default(0)
-  receiptWidth     String  @default("80mm")
-  paymentMethods   String  @default("CASH,CARD,BANK,CREDIT")
-  notifyOnDue      Boolean @default(true)
+  id             String  @id @default(cuid())
+  tenantId       String  @unique
+  tenant         Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  invoicePrefix  String  @default("INV")
+  nextInvoiceNo  Int     @default(1)
+  taxEnabled     Boolean @default(false)
+  defaultTaxRate Float   @default(0)
+  receiptWidth   String  @default("80mm")
+  paymentMethods String  @default("CASH,CARD,BANK,CREDIT")
+  notifyOnDue    Boolean @default(true)
 }
 
 model AuditLog {
-  id         String   @id @default(cuid())
-  tenantId   String
-  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  userId     String?
-  user       User?    @relation(fields: [userId], references: [id])
-  action     String
-  entity     String
-  entityId   String?
-  oldValue   String?  // JSON string
-  newValue   String?  // JSON string
-  ip         String?
-  userAgent  String?
-  createdAt  DateTime @default(now())
+  id        String   @id @default(cuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  action    String
+  entity    String
+  entityId  String?
+  oldValue  String?  @db.Text // JSON string
+  newValue  String?  @db.Text // JSON string
+  ip        String?
+  userAgent String?
+  createdAt DateTime @default(now())
 
   @@index([tenantId])
 }

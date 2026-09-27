@@ -1,6 +1,6 @@
 # MarkazOS
 
-**Complete multi-tenant retail & store management SaaS** — inventory, POS, udhaar/khata, customers, payments, invoices, reports, marketing and a super-admin platform portal. Built with Next.js 14 (App Router), TypeScript, Tailwind CSS and Prisma on Postgres (Supabase-ready).
+**Complete multi-tenant retail & store management SaaS** — inventory, POS, udhaar/khata, customers, payments, invoices, reports, marketing and a super-admin platform portal. Built with Next.js 14 (App Router), TypeScript, Tailwind CSS and Prisma on MySQL/MariaDB (deployed on Hostinger Node.js web apps).
 
 Tagline: _Aapka Store. Aapka Khata. Aapka Business — Ek Jagah._
 
@@ -26,17 +26,22 @@ Tagline: _Aapka Store. Aapka Khata. Aapka Business — Ek Jagah._
 # 1. Install
 npm install
 
-# 2. Configure environment
+# 2. Start a local MySQL (the schema targets MySQL/MariaDB)
+docker run -d --name markazos-db -p 3306:3306 \
+  -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=markazos mysql:8
+
+# 3. Configure environment
 cp .env.example .env
-#   → paste your Supabase connection strings + a random AUTH_SECRET
+#   → paste your MySQL connection string + a random AUTH_SECRET
+#     (see docs/DEPLOY.md for the Hostinger-specific `localhost` pitfall)
 
-# 3. Create the schema on your database
-npx prisma migrate deploy    # or: npx prisma migrate dev  (first time)
+# 4. Create the schema on your database
+npx prisma migrate deploy
 
-# 4. Seed demo data (Ubaer General Store)
+# 5. Seed demo data (Ubaer General Store)
 npm run db:seed
 
-# 5. Run
+# 6. Run
 npm run dev                  # http://localhost:3000
 ```
 
@@ -56,15 +61,18 @@ npm run dev                  # http://localhost:3000
 |---------|---------|
 | `npm run dev` | Start dev server |
 | `npm run build` | Production build (runs `prisma generate`) |
+| `npm run start:node` | Start the production server via `server.js` (Hostinger entry file) |
 | `npm test` | Run the domain test suite (Vitest) |
 | `npm run test:e2e` | Playwright E2E (needs running app + DB) |
 | `npm run typecheck` | `tsc --noEmit` |
-| `npm run prisma:migrate` | Create/apply a migration |
+| `npm run prisma:migrate` | Create/apply a migration (needs a local shadow DB) |
+| `npm run prisma:deploy` | Apply committed migrations (production) |
 | `npm run db:seed` | Seed demo data |
 
 ## Documentation
 
-- [docs/SETUP.md](docs/SETUP.md) — Supabase setup, environment, deployment
+- [docs/DEPLOY.md](docs/DEPLOY.md) — **Hostinger / VPS / Docker deployment**
+- [docs/SETUP.md](docs/SETUP.md) — environment setup
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — layers, multi-tenancy, transactions
 - [docs/API.md](docs/API.md) — endpoint reference
 - [docs/SECURITY.md](docs/SECURITY.md) — security checklist

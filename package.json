@@ -7,6 +7,7 @@
     "dev": "next dev",
     "build": "prisma generate && next build",
     "start": "next start",
+    "start:node": "node server.js",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
@@ -16,7 +17,12 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:deploy": "prisma migrate deploy",
     "db:seed": "tsx prisma/seed.ts",
-    "db:reset": "prisma migrate reset --force"
+    "db:reset": "prisma migrate reset --force",
+    "admin:create": "tsx prisma/set-admin.ts",
+    "db:check": "tsx scripts/db-check.ts"
+  },
+  "engines": {
+    "node": ">=20 <25"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

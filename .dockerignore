@@ -1,0 +1,15 @@
+node_modules
+.next
+.git
+.gitignore
+.env
+.env*.local
+coverage
+playwright-report
+test-results
+*.log
+prisma/*.db
+public/uploads/*
+Dockerfile
+.dockerignore
+docs

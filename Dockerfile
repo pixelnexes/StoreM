@@ -11,6 +11,8 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+# Enables `output: 'standalone'` in next.config.mjs → produces .next/standalone.
+ENV NEXT_OUTPUT=standalone
 RUN npx prisma generate && npm run build
 
 FROM node:20-alpine AS runner

@@ -1,10 +1,17 @@
+/**
+ * Standalone output produces `.next/standalone` with a self-contained `server.js`.
+ * It is only wanted on VPS/Docker hosts, where we ship our own image.
+ * Hostinger Node.js web apps run the app from the project root via `server.js`
+ * (see /server.js) or `next start`, so standalone must stay OFF there.
+ * Enable with: NEXT_OUTPUT=standalone
+ */
+const standalone = process.env.NEXT_OUTPUT === 'standalone';
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
-  // Standalone output → deploy on any Node server / VPS / Docker (not Vercel).
-  // Produces .next/standalone with a self-contained `node server.js`.
-  output: 'standalone',
+  ...(standalone ? { output: 'standalone' } : {}),
   eslint: { ignoreDuringBuilds: true },
   async headers() {
     return [
