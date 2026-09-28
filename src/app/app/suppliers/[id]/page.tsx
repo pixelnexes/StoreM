@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { formatPKR } from '@/lib/money';
+import { Stat } from '@/components/Stat';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,9 +30,9 @@ export default async function SupplierDetail({ params }: { params: { id: string 
         <p className="text-sm text-muted">{supplier.phone ?? 'No phone'}{supplier.address ? ` · ${supplier.address}` : ''}</p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        <div className="card"><div className="text-xs uppercase tracking-wide text-muted">Total purchased</div><div className="mt-1 text-2xl font-extrabold">{formatPKR(totalBought)}</div></div>
-        <div className="card"><div className="text-xs uppercase tracking-wide text-muted">Purchase orders</div><div className="mt-1 text-2xl font-extrabold">{supplier.purchases.length}</div></div>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Stat label="Total purchased" value={formatPKR(totalBought)} />
+        <Stat label="Purchase orders" value={String(supplier.purchases.length)} />
       </div>
 
       <div className="card p-0">

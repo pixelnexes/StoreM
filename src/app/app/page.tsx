@@ -2,18 +2,9 @@ import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { formatPKR } from '@/lib/money';
 import { profitFromTotals } from '@/domain/profit';
+import { Stat } from '@/components/Stat';
 
 export const dynamic = 'force-dynamic';
-
-function Stat({ label, value, hint }: { label: string; value: string; hint?: string }) {
-  return (
-    <div className="card">
-      <div className="text-xs uppercase tracking-wide text-muted">{label}</div>
-      <div className="mt-1 text-2xl font-extrabold">{value}</div>
-      {hint && <div className="mt-1 text-xs text-muted">{hint}</div>}
-    </div>
-  );
-}
 
 export default async function Dashboard() {
   const session = (await getSession())!;
@@ -56,14 +47,14 @@ export default async function Dashboard() {
             <p className="text-sm text-muted">No sales yet. Make your first sale from the POS.</p>
           ) : (
             <table className="w-full text-sm">
-              <thead><tr className="text-left text-muted"><th className="pb-2">Invoice</th><th>Customer</th><th className="text-right">Total</th><th className="text-right">Status</th></tr></thead>
+              <thead><tr className="border-b border-line"><th className="th">Invoice</th><th className="th">Customer</th><th className="th text-right">Total</th><th className="th text-right">Status</th></tr></thead>
               <tbody>
                 {recent.map((s) => (
-                  <tr key={s.id} className="border-t border-line">
-                    <td className="py-2 font-medium">{s.invoiceNumber}</td>
-                    <td>{s.customer?.name ?? 'Walk-in'}</td>
-                    <td className="text-right">{formatPKR(s.total)}</td>
-                    <td className="text-right"><span className="badge">{s.status}</span></td>
+                  <tr key={s.id} className="border-b border-line last:border-0">
+                    <td className="py-2.5 font-medium">{s.invoiceNumber}</td>
+                    <td className="py-2.5">{s.customer?.name ?? 'Walk-in'}</td>
+                    <td className="py-2.5 text-right tabular-nums">{formatPKR(s.total)}</td>
+                    <td className="py-2.5 text-right"><span className="badge">{s.status}</span></td>
                   </tr>
                 ))}
               </tbody>
@@ -72,15 +63,15 @@ export default async function Dashboard() {
         </div>
 
         <div className="card">
-          <h2 className="mb-3 font-semibold">Low Stock Alert</h2>
+          <h2 className="mb-3 font-semibold">Low stock</h2>
           {low.length === 0 ? (
-            <p className="text-sm text-muted">All stock levels are healthy ✅</p>
+            <p className="text-sm text-muted">All stock levels are healthy.</p>
           ) : (
             <ul className="space-y-2 text-sm">
               {low.map((i) => (
                 <li key={i.id} className="flex justify-between border-t border-line py-2">
                   <span>{i.product.name}</span>
-                  <span className="font-semibold text-amber-600">{i.quantity} left (min {i.product.minimumStock})</span>
+                  <span className="font-semibold text-warn">{i.quantity} left (min {i.product.minimumStock})</span>
                 </li>
               ))}
             </ul>

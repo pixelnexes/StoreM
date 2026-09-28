@@ -51,7 +51,7 @@ export function CreateTenantForm({ plans }: { plans: Plan[] }) {
           <select name="status" className="input" defaultValue="ACTIVE"><option value="ACTIVE">Active</option><option value="TRIAL">Trial</option></select>
         </div>
       </div>
-      {msg && <p className="mt-2 text-sm text-green-600">{msg}</p>}
+      {msg && <p className="mt-2 text-sm text-ok">{msg}</p>}
       <div className="mt-4 flex gap-2">
         <button disabled={busy} className="btn btn-primary btn-sm">{busy ? 'Creating…' : 'Create store'}</button>
         <button type="button" onClick={() => setOpen(false)} className="btn btn-ghost btn-sm">Close</button>

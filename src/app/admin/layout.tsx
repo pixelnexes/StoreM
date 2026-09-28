@@ -12,16 +12,21 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   return (
     <div className="min-h-screen">
-      <header className="flex h-16 items-center justify-between border-b border-line bg-surface px-6">
-        <Link href="/admin" className="flex items-center gap-2 font-extrabold">
-          <span className="grid h-8 w-8 place-items-center rounded-lg bg-brand text-brand-fg">M</span> MarkazOS · Super Admin
-        </Link>
-        <div className="flex items-center gap-3 text-sm">
-          <span className="text-muted">{session.name}</span>
-          <LogoutButton endpoint="/api/admin/logout" to="/admin/login" />
+      <header className="sticky top-0 z-30 border-b border-line bg-canvas">
+        <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-6 px-5 md:px-8">
+          <Link href="/admin" className="font-display text-[16px] font-semibold tracking-tightish">
+            MarkazOS
+            <span className="ml-2 align-middle text-[11px] font-normal uppercase tracking-eyebrow text-muted">
+              Super admin
+            </span>
+          </Link>
+          <div className="flex items-center gap-4 text-[13px]">
+            <span className="hidden text-muted sm:inline">{session.name}</span>
+            <LogoutButton endpoint="/api/admin/logout" to="/admin/login" />
+          </div>
         </div>
       </header>
-      <main className="mx-auto max-w-6xl p-6">{children}</main>
+      <main className="mx-auto max-w-6xl px-5 py-8 md:px-8">{children}</main>
     </div>
   );
 }

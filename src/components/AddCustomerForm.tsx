@@ -38,7 +38,7 @@ export function AddCustomerForm() {
         <div><label className="label">WhatsApp (optional)</label><input name="whatsapp" className="input" placeholder="Same as phone if blank" /></div>
         <div><label className="label">Address (optional)</label><input name="address" className="input" /></div>
       </div>
-      {msg && <p className="mt-2 text-sm text-amber-600">{msg}</p>}
+      {msg && <p className="mt-2 text-sm text-warn">{msg}</p>}
       <div className="mt-4 flex gap-2">
         <button disabled={busy} className="btn btn-primary btn-sm">{busy ? 'Saving…' : 'Save customer'}</button>
         <button type="button" onClick={() => setOpen(false)} className="btn btn-ghost btn-sm">Cancel</button>

@@ -31,10 +31,10 @@ export function InvoiceActions({
 
   return (
     <div className="no-print mb-4 flex flex-wrap items-center gap-2">
-      <button onClick={() => window.print()} className="btn btn-primary btn-sm">🖨️ Print</button>
-      <button onClick={() => window.print()} className="btn btn-ghost btn-sm">⬇️ Save as PDF</button>
-      <button onClick={sendWhatsApp} disabled={sending} className="btn btn-ghost btn-sm">💬 {sending ? 'Opening…' : 'Send on WhatsApp'}</button>
-      {note && <span className="text-xs text-amber-600">{note}</span>}
+      <button onClick={() => window.print()} className="btn btn-primary btn-sm">Print</button>
+      <button onClick={() => window.print()} className="btn btn-ghost btn-sm">Save as PDF</button>
+      <button onClick={sendWhatsApp} disabled={sending} className="btn btn-ghost btn-sm">{sending ? 'Opening…' : 'Send on WhatsApp'}</button>
+      {note && <span className="text-xs text-warn">{note}</span>}
     </div>
   );
 }

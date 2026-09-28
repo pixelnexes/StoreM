@@ -90,7 +90,7 @@ export function invoiceMessage(d: InvoiceMsgData): string {
     '',
     `Total: ${money(d.total)}`,
     `Paid: ${money(d.paid)}`,
-    d.outstanding > 0 ? `Balance due: ${money(d.outstanding)}` : 'Fully paid ✅',
+    d.outstanding > 0 ? `Balance due: ${money(d.outstanding)}` : 'Fully paid.',
     '',
     'Thank you for your business!',
   ].join('\n');

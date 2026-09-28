@@ -48,7 +48,7 @@ export function ThemeSelector({ current, brandName }: { current: string; brandNa
         <input className="input" value={name} onChange={(e) => setName(e.target.value)} />
       </div>
 
-      {msg && <p className="mt-3 text-sm text-green-600">{msg}</p>}
+      {msg && <p className="mt-3 text-sm text-ok">{msg}</p>}
       <button onClick={save} disabled={saving} className="btn btn-primary mt-4">{saving ? 'Saving…' : 'Save theme'}</button>
     </div>
   );

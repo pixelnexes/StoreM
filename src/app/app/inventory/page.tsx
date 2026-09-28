@@ -38,7 +38,7 @@ export default async function InventoryPage() {
                       {p.image
                         // eslint-disable-next-line @next/next/no-img-element
                         ? <img src={p.image} alt={p.name} className="h-full w-full object-cover" />
-                        : <span className="flex h-full w-full items-center justify-center text-muted">🛒</span>}
+                        : <span className="flex h-full w-full items-center justify-center text-[11px] font-medium uppercase text-muted">{p.name.charAt(0)}</span>}
                     </div>
                   </td>
                   <td className="td font-medium">{p.name}</td>
@@ -47,7 +47,7 @@ export default async function InventoryPage() {
                   <td className="td text-right">{formatPKR(p.purchasePrice)}</td>
                   <td className="td text-right">{formatPKR(p.sellingPrice)}</td>
                   <td className="td text-right font-semibold">{stock}</td>
-                  <td className="td text-right">{low ? <span className="text-amber-600">Low</span> : <span className="text-green-600">OK</span>}</td>
+                  <td className="td text-right">{low ? <span className="text-warn">Low</span> : <span className="text-ok">OK</span>}</td>
                 </tr>
               );
             })}

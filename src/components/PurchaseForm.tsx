@@ -63,7 +63,7 @@ export function PurchaseForm({ branchId, products, suppliers }: { branchId: stri
             <div className="w-24"><label className="label">Qty</label><input type="number" min={1} className="input" value={row.quantity} onChange={(e) => update(i, { quantity: Number(e.target.value) || 1 })} /></div>
             <div className="w-28"><label className="label">Cost/unit</label><input type="number" min={0} className="input" value={row.unitCost} onChange={(e) => update(i, { unitCost: Number(e.target.value) || 0 })} /></div>
             <div className="w-28 text-right"><label className="label">Line</label><div className="py-2.5 font-semibold">{fmt(row.quantity * row.unitCost)}</div></div>
-            <button onClick={() => remove(i)} className="pb-3 text-red-400 hover:text-red-600">✕</button>
+            <button onClick={() => remove(i)} className="pb-3 text-muted hover:text-danger">×</button>
           </div>
         ))}
       </div>
@@ -73,7 +73,7 @@ export function PurchaseForm({ branchId, products, suppliers }: { branchId: stri
       <div className="mt-4 flex items-center justify-between border-t border-line pt-3">
         <div className="text-lg font-bold">Total: {fmt(total)}</div>
         <div className="flex gap-2">
-          {msg && <span className="self-center text-sm text-red-600">{msg}</span>}
+          {msg && <span className="self-center text-sm text-danger">{msg}</span>}
           <button onClick={submit} disabled={busy} className="btn btn-primary btn-sm">{busy ? 'Saving…' : 'Save & add to stock'}</button>
           <button onClick={() => setOpen(false)} className="btn btn-ghost btn-sm">Cancel</button>
         </div>

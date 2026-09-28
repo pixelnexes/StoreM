@@ -81,7 +81,7 @@ export function MarketingComposer({ store, customers }: { store: string; custome
         </div>
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <button onClick={sendBulk} className="btn btn-primary btn-sm">
-            📣 Send to {selectedList.length ? `${selectedList.length} selected` : `all ${filtered.length}`}
+            Send to {selectedList.length ? `${selectedList.length} selected` : `all ${filtered.length}`}
           </button>
           {status && <span className="text-sm text-muted">{status}</span>}
         </div>
@@ -104,7 +104,7 @@ export function MarketingComposer({ store, customers }: { store: string; custome
                   <td className="td font-medium">{c.name}</td>
                   <td className="td">{c.phone}</td>
                   <td className="td text-right">{c.balance > 0 ? 'Rs. ' + c.balance.toLocaleString('en-PK') : '—'}</td>
-                  <td className="td text-right"><button onClick={() => sendOne(c)} className="btn btn-ghost btn-sm">💬 WhatsApp</button></td>
+                  <td className="td text-right"><button onClick={() => sendOne(c)} className="btn btn-ghost btn-sm">WhatsApp</button></td>
                 </tr>
               ))}
               {filtered.length === 0 && <tr><td colSpan={5} className="td p-6 text-center text-muted">No customers in this segment.</td></tr>}

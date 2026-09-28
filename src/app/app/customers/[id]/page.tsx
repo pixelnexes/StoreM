@@ -4,21 +4,12 @@ import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { formatPKR } from '@/lib/money';
 import { ReminderButton } from '@/components/ReminderButton';
+import { Stat } from '@/components/Stat';
 import { creditReminderMessage } from '@/lib/messaging';
 
 export const dynamic = 'force-dynamic';
 
 function daysSince(d: Date) { return Math.floor((Date.now() - d.getTime()) / 86400000); }
-
-function Stat({ label, value, hint, warn }: { label: string; value: string; hint?: string; warn?: boolean }) {
-  return (
-    <div className="card">
-      <div className="text-xs uppercase tracking-wide text-muted">{label}</div>
-      <div className={`mt-1 text-2xl font-extrabold ${warn ? 'text-amber-600' : ''}`}>{value}</div>
-      {hint && <div className="mt-1 text-xs text-muted">{hint}</div>}
-    </div>
-  );
-}
 
 export default async function CustomerDetail({ params }: { params: { id: string } }) {
   const session = (await getSession())!;
@@ -76,7 +67,7 @@ export default async function CustomerDetail({ params }: { params: { id: string 
                 </div>
                 <div className="text-sm">
                   Total <b>{formatPKR(s.total)}</b> · Paid {formatPKR(s.paidAmount)}
-                  {s.outstandingAmount > 0 && <span className="text-amber-600"> · Due {formatPKR(s.outstandingAmount)}</span>}
+                  {s.outstandingAmount > 0 && <span className="text-warn"> · Due {formatPKR(s.outstandingAmount)}</span>}
                   <span className="badge ml-2">{s.status}</span>
                 </div>
               </div>

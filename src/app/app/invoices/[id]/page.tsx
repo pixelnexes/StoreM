@@ -41,7 +41,7 @@ export default async function InvoicePage({
         {/* Header */}
         <div className="flex items-start justify-between border-b border-line pb-4">
           <div>
-            <h1 className="text-xl font-extrabold">{tenant?.businessName}</h1>
+            <h1 className="text-xl font-semibold">{tenant?.businessName}</h1>
             {tenant?.address && <p className="text-sm text-muted">{tenant.address}</p>}
             {tenant?.phone && <p className="text-sm text-muted">Phone: {tenant.phone}</p>}
             <p className="text-sm text-muted">{sale.branch.name}</p>
@@ -92,7 +92,7 @@ export default async function InvoicePage({
           </div>
           <Row label="Paid" value={formatPKR(sale.paidAmount)} />
           {sale.outstandingAmount > 0 && (
-            <div className="flex justify-between font-semibold text-amber-600">
+            <div className="flex justify-between font-semibold text-warn">
               <span>Balance due</span><span>{formatPKR(sale.outstandingAmount)}</span>
             </div>
           )}

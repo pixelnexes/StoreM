@@ -49,7 +49,7 @@ export default async function CustomersPage() {
                 <td className="td">{c.phone}</td>
                 <td className="td text-right">{c.purchases}</td>
                 <td className="td text-right">{formatPKR(c.lifetime)}</td>
-                <td className={`td text-right font-semibold ${c.outstanding > 0 ? 'text-amber-600' : ''}`}>{formatPKR(c.outstanding)}</td>
+                <td className={`td text-right font-semibold ${c.outstanding > 0 ? 'text-warn' : ''}`}>{formatPKR(c.outstanding)}</td>
                 <td className="td">{c.oldestDue ? `${c.oldestDue.toLocaleDateString('en-PK')} · ${daysSince(c.oldestDue)}d ago` : '—'}</td>
                 <td className="td text-right"><Link href={`/app/customers/${c.id}`} className="text-brand hover:underline">Detail →</Link></td>
               </tr>

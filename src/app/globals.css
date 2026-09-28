@@ -3,89 +3,134 @@
 @tailwind utilities;
 
 /* ── Theme tokens (RGB channels for Tailwind rgb(var(--x)/alpha)) ──
-   Default = Slate. Super admin switches <html data-theme="…">. */
+   An earthy, ledger-inspired system: warm paper canvas, warm ink, and one
+   accent hue per theme. Super admin switches <html data-theme="…">.
+   Default = Clay. */
 :root,
-[data-theme='slate'] {
-  --brand: 71 85 105;      /* slate-600 */
+[data-theme='clay'] {
+  --brand: 167 74 43;
   --brand-fg: 255 255 255;
-  --brand-soft: 241 245 249;
-  --ink: 15 23 42;
-  --muted: 100 116 139;
-  --line: 226 232 240;
-  --surface: 255 255 255;
-  --canvas: 248 250 252;
+  --brand-soft: 250 237 231;
+  --ink: 32 27 22;
+  --muted: 118 107 94;
+  --line: 224 216 204;
+  --surface: 255 254 251;
+  --canvas: 245 241 233;
 }
-[data-theme='indigo'] {
-  --brand: 79 70 229;
+[data-theme='moss'] {
+  --brand: 77 94 53;
   --brand-fg: 255 255 255;
-  --brand-soft: 238 242 255;
-  --ink: 15 23 42;
-  --muted: 100 116 139;
-  --line: 226 232 240;
-  --surface: 255 255 255;
-  --canvas: 248 250 252;
+  --brand-soft: 236 240 230;
+  --ink: 32 27 22;
+  --muted: 118 107 94;
+  --line: 224 216 204;
+  --surface: 255 254 251;
+  --canvas: 245 241 233;
 }
-[data-theme='emerald'] {
-  --brand: 5 150 105;
+[data-theme='oxide'] {
+  --brand: 133 52 42;
   --brand-fg: 255 255 255;
-  --brand-soft: 236 253 245;
-  --ink: 15 23 42;
-  --muted: 100 116 139;
-  --line: 226 232 240;
-  --surface: 255 255 255;
-  --canvas: 247 254 250;
+  --brand-soft: 247 232 229;
+  --ink: 32 27 22;
+  --muted: 118 107 94;
+  --line: 224 216 204;
+  --surface: 255 254 251;
+  --canvas: 245 241 233;
 }
-[data-theme='teal'] {
-  --brand: 13 148 136;
+[data-theme='brass'] {
+  --brand: 133 98 24;
   --brand-fg: 255 255 255;
-  --brand-soft: 240 253 250;
-  --ink: 15 23 42;
-  --muted: 100 116 139;
-  --line: 226 232 240;
-  --surface: 255 255 255;
-  --canvas: 247 254 253;
+  --brand-soft: 249 243 226;
+  --ink: 32 27 22;
+  --muted: 118 107 94;
+  --line: 224 216 204;
+  --surface: 255 254 251;
+  --canvas: 245 241 233;
 }
 [data-theme='graphite'] {
-  --brand: 63 63 70;
+  --brand: 45 41 36;
   --brand-fg: 255 255 255;
-  --brand-soft: 244 244 245;
-  --ink: 24 24 27;
-  --muted: 113 113 122;
-  --line: 228 228 231;
-  --surface: 255 255 255;
-  --canvas: 250 250 250;
+  --brand-soft: 236 234 231;
+  --ink: 32 27 22;
+  --muted: 118 107 94;
+  --line: 224 216 204;
+  --surface: 255 254 251;
+  --canvas: 245 241 233;
 }
-[data-theme='navy'] {
-  --brand: 30 58 138;
+[data-theme='stone'] {
+  --brand: 93 89 82;
   --brand-fg: 255 255 255;
-  --brand-soft: 239 246 255;
-  --ink: 15 23 42;
-  --muted: 100 116 139;
-  --line: 226 232 240;
-  --surface: 255 255 255;
-  --canvas: 248 250 252;
+  --brand-soft: 240 238 234;
+  --ink: 32 27 22;
+  --muted: 118 107 94;
+  --line: 224 216 204;
+  --surface: 255 254 251;
+  --canvas: 245 241 233;
+}
+
+/* Status tones — shared by every theme, deliberately muted so they sit on
+   paper without reading as stock UI colours. */
+:root {
+  --danger: 145 56 40;
+  --danger-soft: 249 233 227;
+  --warn: 133 95 25;
+  --ok: 74 96 58;
+  --ok-soft: 235 240 232;
 }
 
 * { box-sizing: border-box; }
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
 body {
   background: rgb(var(--canvas));
   color: rgb(var(--ink));
-  font-feature-settings: 'cv02', 'cv03', 'cv04';
+  font-feature-settings: 'cv05', 'ss01';
+}
+
+@layer base {
+  /* The display face carries the brand. It is reserved for headings so the
+     reading surface stays quiet; body copy never uses it. */
+  h1, h2, h3 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    letter-spacing: -0.012em;
+    line-height: 1.16;
+  }
+  ::selection { background: rgb(var(--brand) / .16); }
 }
 
 /* Reusable component classes */
 @layer components {
-  .btn { @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50; }
-  .btn-primary { @apply bg-brand text-brand-fg hover:opacity-90 active:scale-[.99]; }
-  .btn-ghost { @apply border border-line bg-surface text-ink hover:border-brand hover:text-brand; }
-  .btn-sm { @apply px-3 py-1.5 text-xs; }
-  .card { @apply rounded-xl border border-line bg-surface p-5 shadow-sm; }
-  .input { @apply w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-sm outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20; }
-  .label { @apply mb-1.5 block text-sm font-medium text-ink; }
-  .badge { @apply inline-flex items-center rounded-full bg-brand-soft px-2.5 py-0.5 text-xs font-semibold text-brand; }
-  .th { @apply px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted; }
+  .btn { @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-45; }
+  .btn-primary { @apply bg-brand text-brand-fg hover:bg-brand/90 active:bg-brand/80; }
+  .btn-ghost { @apply border border-line bg-surface text-ink hover:border-ink/35 hover:bg-canvas; }
+  .btn-quiet { @apply text-muted hover:text-ink; }
+  .btn-sm { @apply px-2.5 py-1.5 text-[13px]; }
+  .card { @apply rounded-xl border border-line bg-surface p-5; }
+  .input { @apply w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-sm outline-none transition-colors placeholder:text-muted/60 focus:border-brand focus:ring-1 focus:ring-brand/25; }
+  .label { @apply mb-1.5 block text-[13px] font-medium text-ink/85; }
+  /* Not a pill: a printed chip, square enough to sit on a ruled page. */
+  .badge { @apply inline-flex items-center rounded-[2px] border border-brand/25 bg-brand-soft px-1.5 py-0.5 text-[11px] font-medium uppercase tracking-[0.06em] text-brand; }
+  .th { @apply px-4 py-2.5 text-left text-[11px] font-medium uppercase tracking-eyebrow text-muted; }
   .td { @apply px-4 py-3 text-sm; }
+  .display { @apply font-display font-semibold tracking-tightish; }
+  .eyebrow { @apply block text-[11px] font-medium uppercase tracking-eyebrow text-muted; }
+}
+
+/* Ruled paper: a print-ledger texture, used sparingly as a ground for
+   quiet surfaces (auth screens, side panels) instead of a colour wash. */
+.ruled {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0 33px,
+    rgb(var(--line) / .7) 33px 34px
+  );
+}
+.ruled-ink {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0 33px,
+    rgb(255 255 255 / .055) 33px 34px
+  );
 }
 
 /* Print — invoices/receipts only, hide app chrome */

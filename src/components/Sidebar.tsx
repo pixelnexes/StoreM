@@ -2,44 +2,60 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-const nav = [
-  ['/app', 'Dashboard', '📊'],
-  ['/app/pos', 'Point of Sale', '🧾'],
-  ['/app/sales', 'Sales', '🧮'],
-  ['/app/purchases', 'Purchases', '📥'],
-  ['/app/inventory', 'Inventory', '📦'],
-  ['/app/customers', 'Customers', '👥'],
-  ['/app/suppliers', 'Suppliers', '🚚'],
-  ['/app/khata', 'Ledger & Credit', '📒'],
-  ['/app/marketing', 'Marketing', '💬'],
-  ['/app/reports', 'Reports', '📈'],
-  ['/app/settings', 'Settings', '⚙️'],
+const nav: [string, string][] = [
+  ['/app', 'Dashboard'],
+  ['/app/pos', 'Point of Sale'],
+  ['/app/sales', 'Sales'],
+  ['/app/purchases', 'Purchases'],
+  ['/app/inventory', 'Inventory'],
+  ['/app/customers', 'Customers'],
+  ['/app/suppliers', 'Suppliers'],
+  ['/app/khata', 'Ledger & Credit'],
+  ['/app/marketing', 'Marketing'],
+  ['/app/reports', 'Reports'],
+  ['/app/settings', 'Settings'],
 ];
 
+/** The contents of the navigation rail. Containers (desktop rail, mobile
+ *  drawer) are provided by AppShell so this can be rendered twice. */
 export function Sidebar({ brand, store }: { brand: string; store: string }) {
   const path = usePathname();
+
   return (
-    <aside className="flex w-60 shrink-0 flex-col border-r border-line bg-surface">
-      <div className="flex h-16 items-center gap-2 border-b border-line px-5 font-extrabold">
-        <span className="grid h-8 w-8 place-items-center rounded-lg bg-brand text-brand-fg">M</span> {brand}
+    <>
+      <div className="flex h-14 shrink-0 items-center border-b border-line px-5">
+        <Link href="/" className="font-display text-[16px] font-semibold tracking-tightish">
+          {brand}
+        </Link>
       </div>
-      <div className="border-b border-line px-5 py-3 text-xs">
-        <div className="text-muted">Store</div>
-        <div className="font-semibold">{store}</div>
+
+      <div className="shrink-0 border-b border-line px-5 py-3.5">
+        <span className="eyebrow">Store</span>
+        <div className="mt-1 truncate text-[13.5px] font-medium">{store}</div>
       </div>
-      <nav className="flex-1 space-y-0.5 overflow-y-auto p-3">
-        {nav.map(([href, label, icon]) => {
-          const active = path === href || (href !== '/app' && path.startsWith(href));
-          return (
-            <Link key={href} href={href}
-              className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium ${
-                active ? 'bg-brand text-brand-fg' : 'text-ink hover:bg-canvas'
-              }`}>
-              <span className="w-5 text-center">{icon}</span> {label}
-            </Link>
-          );
-        })}
+
+      <nav className="flex-1 overflow-y-auto px-3 py-4">
+        <ul className="space-y-0.5">
+          {nav.map(([href, label]) => {
+            const active = path === href || (href !== '/app' && path.startsWith(href));
+            return (
+              <li key={href}>
+                <Link
+                  href={href}
+                  aria-current={active ? 'page' : undefined}
+                  className={`block border-l-2 py-2 pl-3 pr-2 text-[13.5px] transition-colors ${
+                    active
+                      ? 'border-brand bg-brand-soft font-medium text-brand'
+                      : 'border-transparent text-ink/75 hover:bg-canvas hover:text-ink'
+                  }`}
+                >
+                  {label}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
       </nav>
-    </aside>
+    </>
   );
 }

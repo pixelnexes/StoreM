@@ -14,5 +14,5 @@ export function ReminderButton({ to, message }: { to: string; message: string })
       if (j.success && j.data.link) window.open(j.data.link, '_blank');
     } finally { setBusy(false); }
   }
-  return <button onClick={send} disabled={busy} className="btn btn-ghost btn-sm">💬 {busy ? '…' : 'Remind'}</button>;
+  return <button onClick={send} disabled={busy} className="btn btn-ghost btn-sm">{busy ? 'Sending…' : 'Send reminder'}</button>;
 }

@@ -124,19 +124,19 @@ export function PosClient({ branchId, store }: { branchId: string; store: string
         <div className="grid flex-1 grid-cols-2 gap-3 overflow-auto pr-1 sm:grid-cols-3 xl:grid-cols-4">
           {products.map((p) => (
             <button key={p.id} onClick={() => addToCart(p)} disabled={p.stock <= 0}
-              className="group flex flex-col overflow-hidden rounded-xl border border-line bg-surface text-left transition hover:border-brand hover:shadow-sm disabled:opacity-40">
+              className="group flex flex-col overflow-hidden rounded-xl border border-line bg-surface text-left transition hover:border-brand disabled:opacity-40">
               <div className="flex h-24 w-full items-center justify-center bg-canvas">
                 {p.image ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={p.image} alt={p.name} className="h-full w-full object-cover" />
                 ) : (
-                  <span className="text-2xl text-muted">🛒</span>
+                  <span className="text-[11px] uppercase tracking-eyebrow text-muted">No image</span>
                 )}
               </div>
               <div className="flex flex-1 flex-col p-3">
                 <div className="font-semibold leading-tight">{p.name}</div>
                 <div className="mt-1 text-base font-bold text-brand">{fmt(p.sellingPrice)}</div>
-                <div className={`mt-auto pt-2 text-xs ${p.stock <= 0 ? 'text-red-500' : 'text-muted'}`}>{p.stock} {p.baseUnit} in stock</div>
+                <div className={`mt-auto pt-2 text-xs ${p.stock <= 0 ? 'text-danger' : 'text-muted'}`}>{p.stock} {p.baseUnit} in stock</div>
               </div>
             </button>
           ))}
@@ -184,7 +184,7 @@ export function PosClient({ branchId, store }: { branchId: string; store: string
                   </div>
                 </div>
               )}
-              {custMsg && <p className="mt-2 text-xs text-amber-600">{custMsg}</p>}
+              {custMsg && <p className="mt-2 text-xs text-warn">{custMsg}</p>}
               <p className="mt-1 text-xs text-muted">Walk-in cash sales can skip this. Credit sales require a customer.</p>
             </>
           )}
@@ -208,7 +208,7 @@ export function PosClient({ branchId, store }: { branchId: string; store: string
                     <button onClick={() => setQty(l.productId, l.quantity + 1)} className="px-2 py-1 text-muted hover:text-ink">+</button>
                   </div>
                   <div className="w-20 text-right font-semibold">{fmt(l.unitPrice * l.quantity)}</div>
-                  <button onClick={() => removeLine(l.productId)} className="text-red-400 hover:text-red-600">✕</button>
+                  <button onClick={() => removeLine(l.productId)} className="text-muted hover:text-danger">×</button>
                 </li>
               ))}
             </ul>
@@ -230,14 +230,14 @@ export function PosClient({ branchId, store }: { branchId: string; store: string
             Auto-fill cash for the remaining balance
           </button>
           <div className="flex justify-between"><span className="text-muted">Paid</span><span>{fmt(settlement.paid)}</span></div>
-          <div className={`flex justify-between font-semibold ${settlement.outstanding > 0 ? 'text-amber-600' : 'text-green-600'}`}>
+          <div className={`flex justify-between font-semibold ${settlement.outstanding > 0 ? 'text-warn' : 'text-ok'}`}>
             <span>{settlement.outstanding > 0 ? 'Credit (outstanding)' : 'Balance due'}</span><span>{fmt(settlement.outstanding)}</span>
           </div>
 
-          {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">{error}</p>}
+          {error && <p className="rounded-lg bg-danger-soft px-3 py-2 text-xs text-danger">{error}</p>}
 
           {result ? (
-            <div className="space-y-2 rounded-lg bg-green-50 p-3 text-sm text-green-800">
+            <div className="space-y-2 rounded-lg bg-ok-soft p-3 text-sm text-ok">
               <div>Sale completed — <b>{result.invoiceNumber}</b> · {fmt(result.total)}{result.outstanding > 0 ? ` · Credit ${fmt(result.outstanding)}` : ''}</div>
               <div className="flex gap-2">
                 <a href={`/app/invoices/${result.saleId}`} target="_blank" className="btn btn-primary btn-sm">Open invoice</a>

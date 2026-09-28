@@ -33,7 +33,7 @@ export function AddSupplierForm() {
         <div><label className="label">WhatsApp</label><input name="whatsapp" className="input" /></div>
         <div><label className="label">Address</label><input name="address" className="input" /></div>
       </div>
-      {msg && <p className="mt-2 text-sm text-red-600">{msg}</p>}
+      {msg && <p className="mt-2 text-sm text-danger">{msg}</p>}
       <div className="mt-4 flex gap-2">
         <button disabled={busy} className="btn btn-primary btn-sm">{busy ? 'Saving…' : 'Save supplier'}</button>
         <button type="button" onClick={() => setOpen(false)} className="btn btn-ghost btn-sm">Cancel</button>

@@ -4,12 +4,9 @@ import { prisma } from '@/lib/prisma';
 import { getPlatformSettings } from '@/lib/platform';
 import { ThemeSelector } from '@/components/ThemeSelector';
 import { CreateTenantForm } from '@/components/CreateTenantForm';
+import { Stat } from '@/components/Stat';
 
 export const dynamic = 'force-dynamic';
-
-function Stat({ label, value }: { label: string; value: string }) {
-  return <div className="card"><div className="text-xs uppercase tracking-wide text-muted">{label}</div><div className="mt-1 text-2xl font-extrabold">{value}</div></div>;
-}
 
 export default async function AdminHome() {
   const session = await getAdminSession();
@@ -45,18 +42,18 @@ export default async function AdminHome() {
         <h2 className="p-4 font-semibold">Tenants</h2>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-canvas text-left text-muted"><tr><th className="p-3">Business</th><th>Phone</th><th>Plan</th><th>Status</th><th className="text-right">Users</th></tr></thead>
+            <thead><tr className="border-b border-line"><th className="th">Business</th><th className="th">Phone</th><th className="th">Plan</th><th className="th">Status</th><th className="th text-right">Users</th></tr></thead>
             <tbody>
               {tenants.map((t) => (
-                <tr key={t.id} className="border-t border-line">
-                  <td className="p-3 font-medium">{t.businessName}</td>
-                  <td>{t.phone ?? '—'}</td>
-                  <td>{t.subscription?.plan.name ?? '—'}</td>
-                  <td><span className="badge">{t.subscription?.status ?? 'N/A'}</span></td>
-                  <td className="text-right">{t._count.users}</td>
+                <tr key={t.id} className="border-b border-line last:border-0">
+                  <td className="td font-medium">{t.businessName}</td>
+                  <td className="td">{t.phone ?? '—'}</td>
+                  <td className="td">{t.subscription?.plan.name ?? '—'}</td>
+                  <td className="td"><span className="badge">{t.subscription?.status ?? 'N/A'}</span></td>
+                  <td className="td text-right tabular-nums">{t._count.users}</td>
                 </tr>
               ))}
-              {tenants.length === 0 && <tr><td colSpan={5} className="p-6 text-center text-muted">No tenants yet.</td></tr>}
+              {tenants.length === 0 && <tr><td colSpan={5} className="td p-6 text-center text-muted">No tenants yet.</td></tr>}
             </tbody>
           </table>
         </div>

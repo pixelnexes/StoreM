@@ -83,7 +83,7 @@ export function AddProductForm() {
           <div><label className="label">Selling price (per unit)</label><input name="sellingPrice" type="number" min={0} defaultValue={0} className="input" /></div>
         </div>
       </div>
-      {msg && <p className="mt-2 text-sm text-red-600">{msg}</p>}
+      {msg && <p className="mt-2 text-sm text-danger">{msg}</p>}
       <div className="mt-4 flex gap-2">
         <button disabled={busy || uploading} className="btn btn-primary btn-sm">{busy ? 'Saving…' : 'Save product'}</button>
         <button type="button" onClick={() => setOpen(false)} className="btn btn-ghost btn-sm">Cancel</button>

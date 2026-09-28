@@ -19,31 +19,47 @@ const config: Config = {
         line: 'rgb(var(--line) / <alpha-value>)',
         surface: 'rgb(var(--surface) / <alpha-value>)',
         canvas: 'rgb(var(--canvas) / <alpha-value>)',
+        // Status tones: kept earthy and muted so warnings and errors still
+        // belong to the paper-and-ink palette instead of the default bright
+        // traffic-light colours.
+        danger: 'rgb(var(--danger) / <alpha-value>)',
+        'danger-soft': 'rgb(var(--danger-soft) / <alpha-value>)',
+        warn: 'rgb(var(--warn) / <alpha-value>)',
+        ok: 'rgb(var(--ok) / <alpha-value>)',
+        'ok-soft': 'rgb(var(--ok-soft) / <alpha-value>)',
       },
       fontFamily: {
-        sans: ['var(--font-inter)', 'system-ui', 'sans-serif'],
+        sans: ['var(--font-body)', 'system-ui', 'sans-serif'],
+        display: ['var(--font-display)', 'Iowan Old Style', 'Georgia', 'serif'],
       },
+      // Deliberately small radii: the product should read as printed matter,
+      // not as a stack of inflated pills.
       borderRadius: {
-        xl2: '1rem',
+        sm: '2px',
+        DEFAULT: '3px',
+        md: '3px',
+        lg: '3px',
+        xl: '4px',
+        '2xl': '6px',
+        '3xl': '8px',
+      },
+      letterSpacing: {
+        eyebrow: '0.14em',
+        tightish: '-0.015em',
       },
       keyframes: {
         'fade-up': {
-          '0%': { opacity: '0', transform: 'translateY(16px)' },
+          '0%': { opacity: '0', transform: 'translateY(8px)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
         },
         'fade-in': {
           '0%': { opacity: '0' },
           '100%': { opacity: '1' },
         },
-        float: {
-          '0%,100%': { transform: 'translateY(0)' },
-          '50%': { transform: 'translateY(-8px)' },
-        },
       },
       animation: {
-        'fade-up': 'fade-up .6s cubic-bezier(.22,.61,.36,1) both',
-        'fade-in': 'fade-in .8s ease both',
-        float: 'float 6s ease-in-out infinite',
+        'fade-up': 'fade-up .45s cubic-bezier(.22,.61,.36,1) both',
+        'fade-in': 'fade-in .3s ease both',
       },
     },
   },

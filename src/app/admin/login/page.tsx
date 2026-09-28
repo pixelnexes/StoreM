@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { AuthShell } from '@/components/AuthShell';
 
 export default function AdminLogin() {
   const router = useRouter();
@@ -24,17 +25,57 @@ export default function AdminLogin() {
   }
 
   return (
-    <main className="grid min-h-screen place-items-center bg-gradient-to-b from-brand-soft to-canvas px-5">
-      <div className="w-full max-w-sm">
-        <div className="mb-6 text-center text-xl font-extrabold">MarkazOS · Super Admin</div>
-        <form onSubmit={submit} className="card space-y-3">
-          <div><label className="label">Email</label><input name="email" type="email" required className="input" defaultValue="superadmin@markazos.app" /></div>
-          <div><label className="label">Password</label><input name="password" type="password" required className="input" defaultValue="admin1234" /></div>
-          {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>}
-          <button disabled={loading} className="btn btn-primary w-full py-3">{loading ? 'Please wait…' : 'Login'}</button>
-        </form>
-        <p className="mt-4 text-center text-sm"><Link href="/login" className="text-brand hover:underline">← Store owner login</Link></p>
-      </div>
-    </main>
+    <AuthShell
+      statement="Behind the platform."
+      support="Stores, subscriptions and the theme every tenant is served with."
+      footnote="Restricted access · all actions are logged"
+    >
+      <span className="eyebrow">Restricted</span>
+      <h1 className="mt-4 text-[28px] leading-tight">Super admin</h1>
+      <p className="mt-2 text-[14px] text-muted">
+        Platform-wide controls for MarkazOS.
+      </p>
+
+      <form onSubmit={submit} className="mt-7 space-y-4">
+        <div>
+          <label className="label" htmlFor="email">Email</label>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            required
+            className="input"
+            defaultValue="superadmin@markazos.app"
+          />
+        </div>
+        <div>
+          <label className="label" htmlFor="password">Password</label>
+          <input
+            id="password"
+            name="password"
+            type="password"
+            required
+            className="input"
+            defaultValue="admin1234"
+          />
+        </div>
+
+        {error && (
+          <p role="alert" className="border-l-2 border-danger/60 pl-3 py-0.5 text-[13px] text-danger">
+            {error}
+          </p>
+        )}
+
+        <button disabled={loading} className="btn btn-primary w-full py-3">
+          {loading ? 'Please wait…' : 'Sign in'}
+        </button>
+      </form>
+
+      <p className="mt-7 border-t border-line pt-4 text-[13px] text-muted">
+        <Link href="/login" className="transition-colors hover:text-ink">
+          ← Store owner sign in
+        </Link>
+      </p>
+    </AuthShell>
   );
 }

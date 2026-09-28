@@ -45,13 +45,13 @@ export default async function KhataPage() {
                 <tr key={c.id} className="border-t border-line">
                   <td className="td font-medium">{c.name}</td>
                   <td className="td">{c.phone}</td>
-                  <td className="td text-right font-semibold text-amber-600">{formatPKR(c.balance)}</td>
+                  <td className="td text-right font-semibold text-warn">{formatPKR(c.balance)}</td>
                   <td className="td text-right">
                     <ReminderButton to={c.phone} message={creditReminderMessage(tenant?.businessName ?? 'Store', c.name, c.balance)} />
                   </td>
                 </tr>
               ))}
-              {debtors.length === 0 && <tr><td colSpan={4} className="td p-6 text-center text-muted">No outstanding credit. 🎉</td></tr>}
+              {debtors.length === 0 && <tr><td colSpan={4} className="td p-6 text-center text-muted">No outstanding credit.</td></tr>}
             </tbody>
           </table>
         </div>
