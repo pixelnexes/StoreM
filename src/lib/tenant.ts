@@ -1,5 +1,7 @@
 import 'server-only';
 import { getSession, type SessionPayload } from './auth';
+import { prisma } from './prisma';
+import { moduleLabel, planModules } from './modules';
 
 /**
  * Tenant isolation guard. Every tenant-scoped API/route handler must call
@@ -45,4 +47,20 @@ export function assertOwned(record: { tenantId: string } | null, tenantId: strin
   if (!record || record.tenantId !== tenantId) {
     throw new ApiError(404, 'NOT_FOUND', 'Resource not found');
   }
+}
+
+/**
+ * Plan gate for a purchased module. The tenant's plan decides which modules
+ * exist; anything else is a 403 the UI can turn into an upgrade prompt.
+ */
+export async function requireModule(moduleKey: string): Promise<TenantContext> {
+  const ctx = await requireTenant();
+  const sub = await prisma.subscription.findUnique({
+    where: { tenantId: ctx.tenantId },
+    select: { plan: { select: { features: true } } },
+  });
+  if (!planModules(sub?.plan.features).includes(moduleKey)) {
+    throw new ApiError(403, 'MODULE_NOT_IN_PLAN', `${moduleLabel(moduleKey)} is not part of your plan`);
+  }
+  return ctx;
 }

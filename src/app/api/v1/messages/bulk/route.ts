@@ -1,6 +1,6 @@
 import { handle, ok } from '@/lib/api';
 import { prisma } from '@/lib/prisma';
-import { requireTenant } from '@/lib/tenant';
+import { requireModule } from '@/lib/tenant';
 import { bulkMessageSchema } from '@/lib/validators';
 import { getMessagingProvider } from '@/lib/messaging';
 
@@ -11,7 +11,7 @@ import { getMessagingProvider } from '@/lib/messaging';
  */
 export async function POST(req: Request) {
   return handle(async () => {
-    const ctx = await requireTenant();
+    const ctx = await requireModule('marketing');
     const body = bulkMessageSchema.parse(await req.json());
     const provider = getMessagingProvider();
 

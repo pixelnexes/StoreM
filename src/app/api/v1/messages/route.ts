@@ -1,6 +1,6 @@
 import { handle, ok } from '@/lib/api';
 import { prisma } from '@/lib/prisma';
-import { requireTenant } from '@/lib/tenant';
+import { requireModule, requireTenant } from '@/lib/tenant';
 import { messageSchema } from '@/lib/validators';
 import { getMessagingProvider } from '@/lib/messaging';
 
@@ -10,8 +10,13 @@ import { getMessagingProvider } from '@/lib/messaging';
  */
 export async function POST(req: Request) {
   return handle(async () => {
-    const ctx = await requireTenant();
     const body = messageSchema.parse(await req.json());
+
+    // Campaign blasts belong to the marketing module; invoice/receipt/reminder
+    // sends are part of the core product and stay open to every plan.
+    const ctx = ['MARKETING', 'PROMO'].includes(body.type)
+      ? await requireModule('marketing')
+      : await requireTenant();
 
     const provider = getMessagingProvider();
     const result = await provider.send({ to: body.to, type: body.type, body: body.body });

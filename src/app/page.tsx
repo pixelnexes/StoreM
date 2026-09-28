@@ -12,11 +12,11 @@ const modules: [string, string, string][] = [
   ['08', 'WhatsApp', 'Invoices, receipts, credit reminders and campaigns, sent where your customers already are.'],
 ];
 
-const pricing: { name: string; price: string; unit: string; branches: string; staff: string; products: string; support: string; chosen?: boolean }[] = [
-  { name: 'Starter', price: 'Rs 1,999', unit: '/mo', branches: '1', staff: '2', products: '500', support: 'Email' },
-  { name: 'Professional', price: 'Rs 4,999', unit: '/mo', branches: '2', staff: '8', products: '5,000', support: 'Priority', chosen: true },
-  { name: 'Business', price: 'Rs 9,999', unit: '/mo', branches: 'Unlimited', staff: '25', products: 'Unlimited', support: 'Priority' },
-  { name: 'Enterprise', price: 'Custom', unit: '', branches: 'Unlimited', staff: 'Custom', products: 'Unlimited', support: 'Dedicated' },
+const pricing: { name: string; price: string; unit: string; modules: string; staff: string; products: string; support: string; chosen?: boolean }[] = [
+  { name: 'Basic', price: 'Rs 5,000', unit: '/mo', modules: 'POS, stock, customers', staff: '2', products: '500', support: 'Email' },
+  { name: 'Standard', price: 'Rs 10,000', unit: '/mo', modules: 'Add khata & credit', staff: '8', products: '5,000', support: 'Priority', chosen: true },
+  { name: 'Premium', price: 'Rs 15,000', unit: '/mo', modules: 'Add reports', staff: '25', products: 'Unlimited', support: 'Priority' },
+  { name: 'Custom', price: 'Custom', unit: '', modules: 'Everything, plus campaigns', staff: 'Custom', products: 'Unlimited', support: 'Dedicated' },
 ];
 
 const faqs: [string, string][] = [
@@ -186,7 +186,7 @@ export default async function Landing() {
               <tr className="border-b border-ink/25">
                 <th scope="col" className="th pr-4">Plan</th>
                 <th scope="col" className="th px-4 text-right">Price</th>
-                <th scope="col" className="th px-4 text-right">Branches</th>
+                <th scope="col" className="th px-4 text-left">Modules</th>
                 <th scope="col" className="th px-4 text-right">Staff</th>
                 <th scope="col" className="th px-4 text-right">Products</th>
                 <th scope="col" className="th pl-4">Support</th>
@@ -210,7 +210,7 @@ export default async function Landing() {
                     {p.price}
                     <span className="text-[13px] text-muted">{p.unit}</span>
                   </td>
-                  <td className="px-4 py-4 text-right text-[15px] text-muted tabular-nums">{p.branches}</td>
+                  <td className="px-4 py-4 text-[15px] text-muted">{p.modules}</td>
                   <td className="px-4 py-4 text-right text-[15px] text-muted tabular-nums">{p.staff}</td>
                   <td className="px-4 py-4 text-right text-[15px] text-muted tabular-nums">{p.products}</td>
                   <td className="py-4 pl-4 text-[15px] text-muted">{p.support}</td>
@@ -224,7 +224,7 @@ export default async function Landing() {
           <Link href="/login?tab=register" className="btn btn-primary px-5 py-3 text-[15px]">
             Start free trial
           </Link>
-          <p className="text-[13px] text-muted">All plans include invoices, khata, reports and WhatsApp sending.</p>
+          <p className="text-[13px] text-muted">Every plan includes invoices and WhatsApp sending. Higher plans unlock more modules.</p>
         </div>
       </section>
 

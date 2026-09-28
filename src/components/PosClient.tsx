@@ -13,6 +13,9 @@ export function PosClient({ branchId, store }: { branchId: string; store: string
   const [products, setProducts] = useState<Product[]>([]);
   const [query, setQuery] = useState('');
   const [cart, setCart] = useState<Line[]>([]);
+  // The line the counter is currently working on — it stays visibly active
+  // until another product is picked or the line is removed.
+  const [activeId, setActiveId] = useState<string | null>(null);
 
   // Customer
   const [customer, setCustomer] = useState<Customer | null>(null);
@@ -28,6 +31,9 @@ export function PosClient({ branchId, store }: { branchId: string; store: string
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<{ saleId: string; invoiceNumber: string; total: number; outstanding: number } | null>(null);
   const [error, setError] = useState('');
+
+  // Quantity drafts so the field can be cleared/typed without snapping to 1.
+  const [qtyDraft, setQtyDraft] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const t = setTimeout(() => {
@@ -46,17 +52,38 @@ export function PosClient({ branchId, store }: { branchId: string; store: string
     return () => clearTimeout(t);
   }, [custQuery]);
 
+  const stockOf = (productId: string, fallback: number) => products.find((p) => p.id === productId)?.stock ?? fallback;
+
   function addToCart(p: Product) {
     setResult(null);
+    setActiveId(p.id);
     setCart((c) => {
       const found = c.find((l) => l.productId === p.id);
-      if (found) return c.map((l) => l.productId === p.id ? { ...l, quantity: Math.min(l.quantity + 1, p.stock) } : l);
+      if (found) return c.map((l) => l.productId === p.id ? { ...l, quantity: Math.min(l.quantity + 1, stockOf(p.id, l.stock)) } : l);
       return [...c, { productId: p.id, name: p.name, unitPrice: p.sellingPrice, quantity: 1, stock: p.stock, unit: p.baseUnit }];
     });
   }
+
   const setQty = (id: string, q: number) =>
-    setCart((c) => c.map((l) => l.productId === id ? { ...l, quantity: Math.max(1, Math.min(q, l.stock)) } : l));
-  const removeLine = (id: string) => setCart((c) => c.filter((l) => l.productId !== id));
+    setCart((c) => c.map((l) => {
+      if (l.productId !== id) return l;
+      const max = stockOf(id, l.stock);
+      return { ...l, quantity: Math.max(1, Math.min(q, max)) };
+    }));
+
+  const commitQty = (id: string) => {
+    const raw = qtyDraft[id];
+    setQtyDraft((d) => { const next = { ...d }; delete next[id]; return next; });
+    if (raw == null || raw === '') return;
+    const n = Number(raw);
+    if (Number.isFinite(n)) setQty(id, n);
+  };
+
+  const removeLine = (id: string) => {
+    setCart((c) => c.filter((l) => l.productId !== id));
+    setActiveId((a) => (a === id ? null : a));
+    setQtyDraft((d) => { const next = { ...d }; delete next[id]; return next; });
+  };
 
   const totals = useMemo(
     () => cart.length ? computeSaleTotals(cart.map((l) => ({ quantity: l.quantity, unitPrice: l.unitPrice }))) : { subtotal: 0, discount: 0, tax: 0, total: 0 },
@@ -66,7 +93,7 @@ export function PosClient({ branchId, store }: { branchId: string; store: string
   const settlement = settlePayments(totals.total, payments);
 
   function selectCustomer(c: Customer) {
-    setCustomer(c); setCustQuery(`${c.name} · ${c.phone}`); setCustResults([]); setShowNewCust(false); setCustMsg('');
+    setCustomer(c); setCustQuery(`${c.name} · ${c.phone}`); setCustResults([]); setShowNewCust(false); setCustMsg(''); setError('');
   }
 
   async function addCustomer() {
@@ -88,16 +115,18 @@ export function PosClient({ branchId, store }: { branchId: string; store: string
 
   async function checkout() {
     setError('');
-    if (cart.length === 0) { setError('Cart is empty'); return; }
-    if (settlement.outstanding > 0 && !customer) {
-      setError('A customer is required for a credit (partial/unpaid) sale.'); return;
+    if (cart.length === 0) { setError('Add at least one product to the sale.'); return; }
+    if (!customer) {
+      setError('Customer name and phone number are required on every invoice.');
+      document.getElementById('pos-customer')?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      return;
     }
     setBusy(true);
     try {
       const res = await fetch('/api/v1/sales', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          branchId, customerId: customer?.id ?? null,
+          branchId, customerId: customer.id,
           items: cart.map((l) => ({ productId: l.productId, quantity: l.quantity, unit: l.unit, unitPrice: l.unitPrice })),
           payments,
         }),
@@ -105,7 +134,7 @@ export function PosClient({ branchId, store }: { branchId: string; store: string
       const j = await res.json();
       if (!j.success) { setError(j.error?.message ?? 'Sale failed'); return; }
       setResult({ saleId: j.data.sale.id, invoiceNumber: j.data.invoiceNumber, total: j.data.totals.total, outstanding: j.data.settlement.outstanding });
-      setCart([]); setPay({ CASH: 0, CARD: 0, BANK: 0, ONLINE: 0 });
+      setCart([]); setPay({ CASH: 0, CARD: 0, BANK: 0, ONLINE: 0 }); setQtyDraft({}); setActiveId(null);
       clearCustomer(); setQuery('');
       fetch('/api/v1/products').then((r) => r.json()).then((jj) => jj.success && setProducts(jj.data));
     } catch { setError('Network error'); }
@@ -113,44 +142,53 @@ export function PosClient({ branchId, store }: { branchId: string; store: string
   }
 
   return (
-    <div className="grid h-[calc(100vh-8rem)] grid-cols-1 gap-6 lg:grid-cols-5">
+    <div className="grid grid-cols-1 gap-6 lg:h-[calc(100vh-8rem)] lg:grid-cols-5">
       {/* Products */}
-      <div className="flex flex-col lg:col-span-3">
+      <div className="flex flex-col lg:col-span-3 lg:min-h-0">
         <div className="mb-3 flex items-center justify-between">
           <h1 className="text-2xl font-bold">Point of Sale</h1>
           <span className="text-sm text-muted">{store}</span>
         </div>
         <input autoFocus className="input mb-4" placeholder="Search product name, SKU or barcode…" value={query} onChange={(e) => setQuery(e.target.value)} />
-        <div className="grid flex-1 grid-cols-2 gap-3 overflow-auto pr-1 sm:grid-cols-3 xl:grid-cols-4">
-          {products.map((p) => (
-            <button key={p.id} onClick={() => addToCart(p)} disabled={p.stock <= 0}
-              className="group flex flex-col overflow-hidden rounded-xl border border-line bg-surface text-left transition hover:border-brand disabled:opacity-40">
-              <div className="flex h-24 w-full items-center justify-center bg-canvas">
-                {p.image ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={p.image} alt={p.name} className="h-full w-full object-cover" />
-                ) : (
-                  <span className="text-[11px] uppercase tracking-eyebrow text-muted">No image</span>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4 lg:flex-1 lg:overflow-auto lg:pr-1">
+          {products.map((p) => {
+            const inCart = cart.find((l) => l.productId === p.id);
+            const active = activeId === p.id;
+            return (
+              <button key={p.id} onClick={() => addToCart(p)} disabled={p.stock <= 0}
+                className={`group relative flex flex-col overflow-hidden rounded-xl border bg-surface text-left transition ${active ? 'border-brand ring-1 ring-brand/40' : 'border-line hover:border-brand'} disabled:opacity-40`}>
+                <div className="flex h-24 w-full items-center justify-center bg-canvas">
+                  {p.image ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={p.image} alt={p.name} className="h-full w-full object-cover" />
+                  ) : (
+                    <span className="text-[11px] uppercase tracking-eyebrow text-muted">No image</span>
+                  )}
+                </div>
+                {inCart && (
+                  <span className="absolute right-1.5 top-1.5 rounded bg-brand px-1.5 py-0.5 text-[11px] font-semibold text-brand-fg">
+                    {inCart.quantity} in sale
+                  </span>
                 )}
-              </div>
-              <div className="flex flex-1 flex-col p-3">
-                <div className="font-semibold leading-tight">{p.name}</div>
-                <div className="mt-1 text-base font-bold text-brand">{fmt(p.sellingPrice)}</div>
-                <div className={`mt-auto pt-2 text-xs ${p.stock <= 0 ? 'text-danger' : 'text-muted'}`}>{p.stock} {p.baseUnit} in stock</div>
-              </div>
-            </button>
-          ))}
+                <div className="flex flex-1 flex-col p-3">
+                  <div className="font-semibold leading-tight">{p.name}</div>
+                  <div className="mt-1 text-base font-bold text-brand">{fmt(p.sellingPrice)}</div>
+                  <div className={`mt-auto pt-2 text-xs ${p.stock <= 0 ? 'text-danger' : 'text-muted'}`}>{p.stock} {p.baseUnit} in stock</div>
+                </div>
+              </button>
+            );
+          })}
           {products.length === 0 && <p className="col-span-full text-sm text-muted">No products found.</p>}
         </div>
       </div>
 
       {/* Cart / checkout */}
-      <div className="flex flex-col overflow-hidden rounded-xl border border-line bg-surface lg:col-span-2">
+      <div className="flex flex-col overflow-hidden rounded-xl border border-line bg-surface lg:col-span-2" id="pos-cart">
         <div className="border-b border-line px-4 py-3 font-semibold">Current Sale</div>
 
-        {/* Customer */}
-        <div className="border-b border-line p-4">
-          <label className="label">Customer</label>
+        {/* Customer — required on every invoice */}
+        <div id="pos-customer" className={`border-b p-4 ${customer ? 'border-line' : error ? 'border-danger bg-danger-soft/40' : 'border-line'}`}>
+          <label className="label">Customer <span className="text-danger">*</span></label>
           {customer ? (
             <div className="flex items-center justify-between rounded-lg bg-brand-soft px-3 py-2 text-sm">
               <span><b>{customer.name}</b> · {customer.phone}</span>
@@ -171,13 +209,13 @@ export function PosClient({ branchId, store }: { branchId: string; store: string
               )}
               {!showNewCust && (
                 <button onClick={() => { setShowNewCust(true); setNewPhone(custQuery.replace(/[^\d+]/g, '')); }} className="mt-2 text-xs font-medium text-brand hover:underline">
-                  + Add new customer
+                  + New customer (name & number)
                 </button>
               )}
               {showNewCust && (
                 <div className="mt-2 space-y-2 rounded-lg border border-line p-3">
-                  <input className="input" placeholder="Customer name (required)" value={newName} onChange={(e) => setNewName(e.target.value)} />
-                  <input className="input" placeholder="Phone number (required)" value={newPhone} onChange={(e) => setNewPhone(e.target.value)} />
+                  <input className="input" autoComplete="off" placeholder="Customer name (required)" value={newName} onChange={(e) => setNewName(e.target.value)} />
+                  <input className="input" autoComplete="off" placeholder="Phone number (required)" value={newPhone} onChange={(e) => setNewPhone(e.target.value)} />
                   <div className="flex gap-2">
                     <button onClick={addCustomer} className="btn btn-primary btn-sm">Save customer</button>
                     <button onClick={() => setShowNewCust(false)} className="btn btn-ghost btn-sm">Cancel</button>
@@ -185,7 +223,7 @@ export function PosClient({ branchId, store }: { branchId: string; store: string
                 </div>
               )}
               {custMsg && <p className="mt-2 text-xs text-warn">{custMsg}</p>}
-              <p className="mt-1 text-xs text-muted">Walk-in cash sales can skip this. Credit sales require a customer.</p>
+              <p className="mt-1 text-xs text-muted">Every invoice carries this customer&apos;s name and number.</p>
             </>
           )}
         </div>
@@ -196,21 +234,32 @@ export function PosClient({ branchId, store }: { branchId: string; store: string
             <p className="text-sm text-muted">Tap a product to add it to the sale.</p>
           ) : (
             <ul className="space-y-2">
-              {cart.map((l) => (
-                <li key={l.productId} className="flex items-center gap-2 border-b border-line pb-2 text-sm">
-                  <div className="flex-1">
-                    <div className="font-medium">{l.name}</div>
-                    <div className="text-xs text-muted">{fmt(l.unitPrice)} / {l.unit}</div>
-                  </div>
-                  <div className="flex items-center rounded-lg border border-line">
-                    <button onClick={() => setQty(l.productId, l.quantity - 1)} className="px-2 py-1 text-muted hover:text-ink">−</button>
-                    <input value={l.quantity} onChange={(e) => setQty(l.productId, Number(e.target.value) || 1)} className="w-10 border-x border-line py-1 text-center outline-none" />
-                    <button onClick={() => setQty(l.productId, l.quantity + 1)} className="px-2 py-1 text-muted hover:text-ink">+</button>
-                  </div>
-                  <div className="w-20 text-right font-semibold">{fmt(l.unitPrice * l.quantity)}</div>
-                  <button onClick={() => removeLine(l.productId)} className="text-muted hover:text-danger">×</button>
-                </li>
-              ))}
+              {cart.map((l) => {
+                const active = activeId === l.productId;
+                return (
+                  <li key={l.productId} onClick={() => setActiveId(l.productId)}
+                    className={`flex cursor-pointer items-center gap-2 border-b border-line pb-2 pl-2 text-sm transition ${active ? 'border-l-2 border-l-brand bg-brand-soft/60' : 'border-l-2 border-l-transparent hover:bg-canvas'}`}>
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate font-medium">{l.name}</div>
+                      <div className="text-xs text-muted">{fmt(l.unitPrice)} / {l.unit}</div>
+                    </div>
+                    <div className="flex items-center rounded-lg border border-line bg-surface">
+                      <button onClick={(e) => { e.stopPropagation(); setQty(l.productId, l.quantity - 1); }} className="px-2 py-1 text-muted hover:text-ink">−</button>
+                      <input inputMode="numeric" aria-label={`Quantity of ${l.name}`}
+                        value={qtyDraft[l.productId] ?? String(l.quantity)}
+                        onChange={(e) => setQtyDraft((d) => ({ ...d, [l.productId]: e.target.value.replace(/\D/g, '') }))}
+                        onBlur={() => commitQty(l.productId)}
+                        onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+                        onClick={(e) => e.stopPropagation()}
+                        className="w-10 border-x border-line py-1 text-center outline-none" />
+                      <button onClick={(e) => { e.stopPropagation(); setQty(l.productId, l.quantity + 1); }} className="px-2 py-1 text-muted hover:text-ink">+</button>
+                    </div>
+                    <div className="w-20 text-right font-semibold">{fmt(l.unitPrice * l.quantity)}</div>
+                    <button onClick={(e) => { e.stopPropagation(); removeLine(l.productId); }} aria-label={`Remove ${l.name}`}
+                      className="text-muted hover:text-danger">×</button>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>
@@ -218,21 +267,26 @@ export function PosClient({ branchId, store }: { branchId: string; store: string
         {/* Totals + payments */}
         <div className="space-y-2 border-t border-line p-4 text-sm">
           <div className="flex justify-between text-lg font-bold"><span>Total</span><span>{fmt(totals.total)}</span></div>
-          <div className="grid grid-cols-2 gap-2 pt-1">
-            {(['CASH', 'CARD', 'BANK', 'ONLINE'] as Method[]).map((m) => (
-              <label key={m} className="text-xs">
-                <span className="text-muted">{m === 'BANK' ? 'BANK TRANSFER' : m}</span>
-                <input type="number" min={0} value={pay[m] || ''} onChange={(e) => setPay((p) => ({ ...p, [m]: Number(e.target.value) || 0 }))} className="input mt-1 py-1.5" placeholder="0" />
-              </label>
-            ))}
-          </div>
-          <button onClick={() => setPay((p) => ({ ...p, CASH: Math.max(0, totals.total - p.CARD - p.BANK - p.ONLINE) }))} className="text-xs font-medium text-brand hover:underline">
-            Auto-fill cash for the remaining balance
-          </button>
-          <div className="flex justify-between"><span className="text-muted">Paid</span><span>{fmt(settlement.paid)}</span></div>
-          <div className={`flex justify-between font-semibold ${settlement.outstanding > 0 ? 'text-warn' : 'text-ok'}`}>
-            <span>{settlement.outstanding > 0 ? 'Credit (outstanding)' : 'Balance due'}</span><span>{fmt(settlement.outstanding)}</span>
-          </div>
+
+          {cart.length > 0 && (
+            <>
+              <div className="grid grid-cols-2 gap-2 pt-1">
+                {(['CASH', 'CARD', 'BANK', 'ONLINE'] as Method[]).map((m) => (
+                  <label key={m} className="text-xs">
+                    <span className="text-muted">{m === 'BANK' ? 'BANK TRANSFER' : m}</span>
+                    <input type="number" min={0} value={pay[m] || ''} onChange={(e) => setPay((p) => ({ ...p, [m]: Number(e.target.value) || 0 }))} className="input mt-1 py-1.5" placeholder="0" />
+                  </label>
+                ))}
+              </div>
+              <button onClick={() => setPay((p) => ({ ...p, CASH: Math.max(0, totals.total - p.CARD - p.BANK - p.ONLINE) }))} className="text-xs font-medium text-brand hover:underline">
+                Auto-fill cash for the remaining balance
+              </button>
+              <div className="flex justify-between"><span className="text-muted">Paid</span><span>{fmt(settlement.paid)}</span></div>
+              <div className={`flex justify-between font-semibold ${settlement.outstanding > 0 ? 'text-warn' : 'text-ok'}`}>
+                <span>{settlement.outstanding > 0 ? 'Credit (outstanding)' : 'Balance due'}</span><span>{fmt(settlement.outstanding)}</span>
+              </div>
+            </>
+          )}
 
           {error && <p className="rounded-lg bg-danger-soft px-3 py-2 text-xs text-danger">{error}</p>}
 
@@ -247,8 +301,11 @@ export function PosClient({ branchId, store }: { branchId: string; store: string
             </div>
           ) : (
             <button onClick={checkout} disabled={busy} className="btn btn-primary w-full py-3">
-              {busy ? 'Processing…' : `Complete sale · ${fmt(totals.total)}`}
+              {busy ? 'Processing…' : cart.length ? `Complete sale · ${fmt(totals.total)}` : 'Complete sale'}
             </button>
+          )}
+          {!result && !customer && (
+            <p className="text-center text-xs text-muted">Add the customer first — name and number go on the invoice.</p>
           )}
         </div>
       </div>

@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation';
+import Link from 'next/link';
 import { getAdminSession } from '@/lib/platformAuth';
 import { prisma } from '@/lib/prisma';
 import { getPlatformSettings } from '@/lib/platform';
@@ -42,7 +43,7 @@ export default async function AdminHome() {
         <h2 className="p-4 font-semibold">Tenants</h2>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead><tr className="border-b border-line"><th className="th">Business</th><th className="th">Phone</th><th className="th">Plan</th><th className="th">Status</th><th className="th text-right">Users</th></tr></thead>
+            <thead><tr className="border-b border-line"><th className="th">Business</th><th className="th">Phone</th><th className="th">Plan</th><th className="th">Status</th><th className="th text-right">Users</th><th className="th text-right">Manage</th></tr></thead>
             <tbody>
               {tenants.map((t) => (
                 <tr key={t.id} className="border-b border-line last:border-0">
@@ -51,9 +52,12 @@ export default async function AdminHome() {
                   <td className="td">{t.subscription?.plan.name ?? '—'}</td>
                   <td className="td"><span className="badge">{t.subscription?.status ?? 'N/A'}</span></td>
                   <td className="td text-right tabular-nums">{t._count.users}</td>
+                  <td className="td text-right">
+                    <Link href={`/admin/stores/${t.id}`} className="text-[13px] text-brand hover:underline">Edit</Link>
+                  </td>
                 </tr>
               ))}
-              {tenants.length === 0 && <tr><td colSpan={5} className="td p-6 text-center text-muted">No tenants yet.</td></tr>}
+              {tenants.length === 0 && <tr><td colSpan={6} className="td p-6 text-center text-muted">No tenants yet.</td></tr>}
             </tbody>
           </table>
         </div>

@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { getPlatformSettings } from '@/lib/platform';
 import { AppShell } from '@/components/AppShell';
 import { accessForStatus, type SubStatus } from '@/domain/subscription';
+import { planModules } from '@/lib/modules';
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession();
@@ -11,7 +12,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   const [tenant, sub, platform] = await Promise.all([
     prisma.tenant.findUnique({ where: { id: session.tenantId } }),
-    prisma.subscription.findUnique({ where: { tenantId: session.tenantId } }),
+    prisma.subscription.findUnique({
+      where: { tenantId: session.tenantId },
+      include: { plan: { select: { name: true, features: true } } },
+    }),
     getPlatformSettings(),
   ]);
   if (!tenant) redirect('/login');
@@ -30,7 +34,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       store={tenant.businessName}
       name={session.name}
       role={session.role}
-      plan={sub?.status}
+      plan={sub?.plan.name}
+      planStatus={sub?.status}
+      modules={planModules(sub?.plan.features)}
       notice={notice}
     >
       {children}

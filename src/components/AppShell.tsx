@@ -17,6 +17,8 @@ export function AppShell({
   name,
   role,
   plan,
+  planStatus,
+  modules,
   notice,
   children,
 }: {
@@ -25,6 +27,8 @@ export function AppShell({
   name: string;
   role: string;
   plan?: string;
+  planStatus?: string;
+  modules?: string[];
   notice?: string;
   children: React.ReactNode;
 }) {
@@ -40,7 +44,7 @@ export function AppShell({
   return (
     <div className="flex min-h-screen">
       <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col border-r border-line bg-surface md:flex">
-        <Sidebar brand={brand} store={store} />
+        <Sidebar brand={brand} store={store} modules={modules} />
       </aside>
 
       {open && (
@@ -52,7 +56,7 @@ export function AppShell({
             className="absolute inset-0 bg-ink/40"
           />
           <aside className="absolute inset-y-0 left-0 flex w-64 animate-fade-in flex-col border-r border-line bg-surface">
-            <Sidebar brand={brand} store={store} />
+            <Sidebar brand={brand} store={store} modules={modules} />
           </aside>
         </div>
       )}
@@ -81,6 +85,7 @@ export function AppShell({
             {plan && (
               <span className="hidden text-[12px] text-muted lg:inline">
                 Plan <span className="font-medium text-ink">{plan}</span>
+                {planStatus && <span className="ml-1 text-muted">· {planStatus}</span>}
               </span>
             )}
             <LogoutButton />

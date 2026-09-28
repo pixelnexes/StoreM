@@ -10,7 +10,8 @@ export async function POST(req: Request) {
     const existing = await prisma.user.findFirst({ where: { phone: body.phone } });
     if (existing) return fail('PHONE_TAKEN', 'This phone number is already registered', 409);
 
-    const starter = await prisma.plan.findUnique({ where: { key: 'professional' } });
+    // Self-serve signups start on the Basic plan's trial.
+    const starter = await prisma.plan.findUnique({ where: { key: 'starter' } });
 
     // Create tenant + owner + branch + trial subscription atomically.
     const result = await prisma.$transaction(async (tx) => {
@@ -38,7 +39,7 @@ export async function POST(req: Request) {
         },
       });
       return { tenant, user };
-    });
+    }, { timeout: 30000, maxWait: 10000 });
 
     await createSession({
       sub: result.user.id, tenantId: result.tenant.id, role: 'OWNER', name: result.user.name,

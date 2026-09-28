@@ -20,15 +20,18 @@ async function main() {
   });
 
   // ── Plans ──────────────────────────────────────────────────
+  // Keys are stable on purpose: subscriptions point at plan ids, so renaming a
+  // tier never has to touch a foreign key. `modules` is the contract the app
+  // reads (src/lib/modules.ts); the other keys are human metadata.
   const plans = [
-    { key: 'starter', name: 'Starter', priceMonthly: 1999, priceYearly: 19188,
-      features: { inventory: true, pos: true, credit: true, reports: true, staff: 2, branches: 1, products: 500 } },
-    { key: 'professional', name: 'Professional', priceMonthly: 4999, priceYearly: 47988,
-      features: { inventory: true, pos: true, credit: true, reports: true, marketing: true, whatsapp: true, staff: 8, branches: 2, products: 5000 } },
-    { key: 'business', name: 'Business', priceMonthly: 9999, priceYearly: 95988,
-      features: { inventory: true, pos: true, credit: true, reports: true, marketing: true, whatsapp: true, reconciliation: true, staff: 25, branches: null, products: null } },
-    { key: 'enterprise', name: 'Enterprise', priceMonthly: 0, priceYearly: 0,
-      features: { inventory: true, pos: true, credit: true, reports: true, marketing: true, whatsapp: true, reconciliation: true, api: true, staff: null, branches: null, products: null } },
+    { key: 'starter', name: 'Basic', priceMonthly: 5000, priceYearly: 60000,
+      features: { modules: ['pos', 'inventory', 'customers'], staff: 2, branches: 1, products: 500 } },
+    { key: 'professional', name: 'Standard', priceMonthly: 10000, priceYearly: 120000,
+      features: { modules: ['pos', 'inventory', 'customers', 'khata'], staff: 8, branches: 2, products: 5000 } },
+    { key: 'business', name: 'Premium', priceMonthly: 15000, priceYearly: 180000,
+      features: { modules: ['pos', 'inventory', 'customers', 'khata', 'reports'], staff: 25, branches: null, products: null } },
+    { key: 'enterprise', name: 'Custom', priceMonthly: 0, priceYearly: 0,
+      features: { modules: ['pos', 'inventory', 'customers', 'khata', 'reports', 'marketing'], staff: null, branches: null, products: null, api: true } },
   ];
   for (const p of plans) {
     const data = { ...p, features: JSON.stringify(p.features) };

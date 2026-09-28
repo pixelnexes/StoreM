@@ -1,6 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { canAccessPath, MODULE_KEYS } from '@/lib/modules';
 
 const nav: [string, string][] = [
   ['/app', 'Dashboard'],
@@ -17,8 +18,9 @@ const nav: [string, string][] = [
 ];
 
 /** The contents of the navigation rail. Containers (desktop rail, mobile
- *  drawer) are provided by AppShell so this can be rendered twice. */
-export function Sidebar({ brand, store }: { brand: string; store: string }) {
+ *  drawer) are provided by AppShell so this can be rendered twice.
+ *  `modules` is the plan's module list — anything not bought for stays hidden. */
+export function Sidebar({ brand, store, modules = MODULE_KEYS }: { brand: string; store: string; modules?: string[] }) {
   const path = usePathname();
 
   return (
@@ -36,7 +38,7 @@ export function Sidebar({ brand, store }: { brand: string; store: string }) {
 
       <nav className="flex-1 overflow-y-auto px-3 py-4">
         <ul className="space-y-0.5">
-          {nav.map(([href, label]) => {
+          {nav.filter(([href]) => canAccessPath(modules, href)).map(([href, label]) => {
             const active = path === href || (href !== '/app' && path.startsWith(href));
             return (
               <li key={href}>

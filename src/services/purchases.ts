@@ -28,6 +28,13 @@ export async function finalizePurchase(input: FinalizePurchaseInput) {
   const subtotal = input.items.reduce((s, i) => s + i.quantity * i.unitCost, 0);
 
   return prisma.$transaction(async (tx) => {
+    const ids = [...new Set(input.items.map((i) => i.productId))];
+    const owned = await tx.product.findMany({
+      where: { id: { in: ids }, tenantId: input.tenantId },
+      select: { id: true },
+    });
+    if (owned.length !== ids.length) throw new ApiError(404, 'PRODUCT_NOT_FOUND', 'Product not found');
+
     const purchase = await tx.purchase.create({
       data: {
         tenantId: input.tenantId,
@@ -42,12 +49,6 @@ export async function finalizePurchase(input: FinalizePurchaseInput) {
     });
 
     for (const item of input.items) {
-      const product = await tx.product.findFirst({
-        where: { id: item.productId, tenantId: input.tenantId },
-        select: { id: true },
-      });
-      if (!product) throw new ApiError(404, 'PRODUCT_NOT_FOUND', 'Product not found');
-
       await tx.purchaseItem.create({
         data: {
           purchaseId: purchase.id, productId: item.productId,
@@ -74,5 +75,5 @@ export async function finalizePurchase(input: FinalizePurchaseInput) {
     }
 
     return { purchase, subtotal };
-  });
+  }, { timeout: 30000, maxWait: 10000 });
 }

@@ -17,6 +17,8 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:deploy": "prisma migrate deploy",
     "db:seed": "tsx prisma/seed.ts",
+    "demo:seed": "tsx prisma/seed-demo-store.ts",
+    "plans:migrate": "tsx scripts/migrate-plans.cjs",
     "db:reset": "prisma migrate reset --force",
     "admin:create": "tsx prisma/set-admin.ts",
     "db:check": "tsx scripts/db-check.ts"

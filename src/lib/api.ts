@@ -22,6 +22,9 @@ export function handle(fn: () => Promise<Response>): Promise<Response> {
     if (err instanceof Error && /_LIMIT_REACHED$|^INSUFFICIENT_STOCK$|^INVALID_/.test(err.message)) {
       return fail(err.message, err.message, 409);
     }
+    if (typeof err === 'object' && err !== null && (err as { code?: string }).code === 'P2028') {
+      return fail('TRANSACTION_TIMEOUT', 'The save took too long — please try again', 503);
+    }
     console.error('[api] unhandled', err);
     return fail('INTERNAL_ERROR', 'Something went wrong', 500);
   });

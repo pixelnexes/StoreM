@@ -18,7 +18,7 @@ export interface FinalizeSaleInput {
   tenantId: string;
   branchId: string;
   cashierId: string;
-  customerId?: string | null;
+  customerId: string;
   items: SaleItemInput[];
   payments: PaymentInput[];
 }
@@ -42,25 +42,35 @@ export async function finalizeSale(input: FinalizeSaleInput) {
 
   const settlement = settlePayments(totals.total, input.payments);
 
-  // Credit/outstanding requires an attached customer.
-  if (settlement.outstanding > 0 && !customerId) {
-    throw new ApiError(422, 'CREDIT_REQUIRES_CUSTOMER', 'Credit sale needs a customer');
+  // Every invoice is billed to a customer: name and phone are printed on it,
+  // so a walk-in with no record cannot be recorded as a sale.
+  if (!customerId) {
+    throw new ApiError(422, 'CUSTOMER_REQUIRED', 'Customer name and phone number are required on every invoice');
   }
+  const billedTo = await prisma.customer.findFirst({
+    where: { id: customerId, tenantId },
+    select: { id: true, status: true },
+  });
+  if (!billedTo) throw new ApiError(422, 'CUSTOMER_NOT_FOUND', 'Customer not found in this store');
 
   return prisma.$transaction(async (tx) => {
-    // 1. Validate stock for every line (row-level, current tenant/branch).
-    for (const item of input.items) {
-      const product = await tx.product.findFirst({
-        where: { id: item.productId, tenantId },
-        select: { id: true, purchasePrice: true },
-      });
-      if (!product) throw new ApiError(404, 'PRODUCT_NOT_FOUND', 'Product not found');
+    const ids = [...new Set(input.items.map((i) => i.productId))];
 
-      const txs = await tx.inventoryTransaction.findMany({
-        where: { tenantId, branchId, productId: item.productId },
-        select: { quantity: true, type: true },
-      });
-      const available = computeStock(txs as any);
+    // 1. Validate every line: products and stock are read with two queries no
+    //    matter how big the basket is (the transaction has a wall-clock budget).
+    const products = await tx.product.findMany({
+      where: { id: { in: ids }, tenantId },
+      select: { id: true, purchasePrice: true },
+    });
+    const costOf = new Map(products.map((p) => [p.id, p.purchasePrice]));
+    for (const id of ids) if (!costOf.has(id)) throw new ApiError(404, 'PRODUCT_NOT_FOUND', 'Product not found');
+
+    const rows = await tx.inventoryTransaction.findMany({
+      where: { tenantId, branchId, productId: { in: ids } },
+      select: { productId: true, quantity: true, type: true },
+    });
+    for (const item of input.items) {
+      const available = computeStock(rows.filter((r) => r.productId === item.productId) as any);
       const chk = checkAvailability(available, item.quantity);
       if (!chk.ok) {
         throw new ApiError(409, 'INSUFFICIENT_STOCK',
@@ -83,7 +93,7 @@ export async function finalizeSale(input: FinalizeSaleInput) {
         tenantId,
         branchId,
         invoiceNumber,
-        customerId: customerId ?? null,
+        customerId,
         subtotal: totals.subtotal,
         discount: totals.discount,
         tax: totals.tax,
@@ -96,12 +106,9 @@ export async function finalizeSale(input: FinalizeSaleInput) {
       },
     });
 
-    // 4. Sale items + capture unit cost for COGS.
+    // 4. Sale items + inventory movement (COGS from the batched cost map).
     for (const item of input.items) {
-      const product = await tx.product.findUniqueOrThrow({
-        where: { id: item.productId },
-        select: { purchasePrice: true },
-      });
+      const cost = costOf.get(item.productId)!;
       const gross = item.quantity * item.unitPrice - (item.discount ?? 0);
       const lineTax = Math.round(gross * (item.taxRate ?? 0));
       await tx.saleItem.create({
@@ -114,7 +121,7 @@ export async function finalizeSale(input: FinalizeSaleInput) {
           discount: item.discount ?? 0,
           tax: lineTax,
           total: gross + lineTax,
-          unitCost: product.purchasePrice,
+          unitCost: cost,
         },
       });
 
@@ -124,7 +131,7 @@ export async function finalizeSale(input: FinalizeSaleInput) {
           tenantId, branchId, productId: item.productId,
           type: 'SALE', quantity: -Math.abs(item.quantity),
           referenceType: 'SALE', referenceId: sale.id,
-          unitCost: product.purchasePrice, createdBy: cashierId,
+          unitCost: cost, createdBy: cashierId,
         },
       });
       await tx.inventory.upsert({
@@ -160,5 +167,5 @@ export async function finalizeSale(input: FinalizeSaleInput) {
     }
 
     return { sale, totals, settlement, invoiceNumber };
-  });
+  }, { timeout: 30000, maxWait: 10000 });
 }

@@ -41,7 +41,7 @@ export async function POST(req: Request) {
         },
       });
       return tenant;
-    });
+    }, { timeout: 30000, maxWait: 10000 });
 
     return ok({ tenantId: result.id, businessName: result.businessName }, 201);
   });

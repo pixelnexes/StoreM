@@ -37,7 +37,8 @@ export const customerSchema = z.object({
 
 export const saleSchema = z.object({
   branchId: z.string().min(1),
-  customerId: z.string().optional().nullable(),
+  // Every invoice carries a customer: name and phone are printed on it.
+  customerId: z.string().min(1, 'Customer is required on every invoice'),
   items: z.array(z.object({
     productId: z.string().min(1),
     quantity: z.number().int().positive(),
@@ -104,4 +105,41 @@ export const createTenantSchema = z.object({
   password: z.string().min(8),
   planKey: z.string().min(1),
   status: z.enum(['TRIAL', 'ACTIVE']).default('ACTIVE'),
+});
+
+// ── Super admin: plans + stores ────────────────────────────────
+
+export const planUpdateSchema = z.object({
+  name: z.string().trim().min(2, 'Plan name is too short').max(40),
+  priceMonthly: z.number().int().min(0, 'Price cannot be negative'),
+  priceYearly: z.number().int().min(0).optional(),
+  active: z.boolean().optional(),
+  modules: z.array(z.string().min(1)).min(1, 'Pick at least one module'),
+});
+
+export const tenantUpdateSchema = z.object({
+  businessName: z.string().trim().min(2),
+  businessType: z.string().trim().optional().or(z.literal('')),
+  phone: phoneSchema.optional().or(z.literal('')),
+  email: z.string().email().optional().or(z.literal('')),
+  address: z.string().trim().optional().or(z.literal('')),
+  planId: z.string().min(1).optional(),
+  subStatus: z.enum(['TRIAL', 'ACTIVE', 'SUSPENDED', 'CANCELLED']).optional(),
+});
+
+export const userCreateSchema = z.object({
+  name: z.string().trim().min(2),
+  phone: phoneSchema,
+  email: z.string().email().optional().or(z.literal('')),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
+  role: z.enum(['OWNER', 'MANAGER', 'CASHIER']),
+});
+
+export const userUpdateSchema = z.object({
+  name: z.string().trim().min(2).optional(),
+  phone: phoneSchema.optional(),
+  email: z.string().email().optional().or(z.literal('')),
+  password: z.string().min(8).optional().or(z.literal('')),
+  role: z.enum(['OWNER', 'MANAGER', 'CASHIER']).optional(),
+  status: z.enum(['active', 'suspended']).optional(),
 });

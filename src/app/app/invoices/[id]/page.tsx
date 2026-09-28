@@ -53,11 +53,11 @@ export default async function InvoicePage({
           </div>
         </div>
 
-        {/* Customer */}
+        {/* Customer — name and number are part of the document */}
         <div className="border-b border-line py-3 text-sm">
-          <span className="text-muted">Billed to: </span>
-          <b>{sale.customer?.name ?? 'Walk-in customer'}</b>
-          {sale.customer?.phone ? ` · ${sale.customer.phone}` : ''}
+          <div className="text-[11px] uppercase tracking-eyebrow text-muted">Billed to</div>
+          <div className="font-semibold">{sale.customer?.name ?? 'Customer'}</div>
+          <div className="text-muted">{sale.customer?.phone ?? 'No number on file'}</div>
         </div>
 
         {/* Items */}

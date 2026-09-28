@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { AuthShell } from '@/components/AuthShell';
+import { AuthInput } from '@/components/AuthInput';
 
 export default function AdminLogin() {
   const router = useRouter();
@@ -36,27 +37,27 @@ export default function AdminLogin() {
         Platform-wide controls for MarkazOS.
       </p>
 
-      <form onSubmit={submit} className="mt-7 space-y-4">
+      <form onSubmit={submit} className="mt-7 space-y-4" autoComplete="off">
         <div>
           <label className="label" htmlFor="email">Email</label>
-          <input
+          <AuthInput
             id="email"
             name="email"
             type="email"
             required
             className="input"
-            defaultValue="superadmin@markazos.app"
+            placeholder="admin@store.com"
           />
         </div>
         <div>
           <label className="label" htmlFor="password">Password</label>
-          <input
+          <AuthInput
             id="password"
             name="password"
             type="password"
             required
             className="input"
-            defaultValue="admin1234"
+            placeholder="••••••••"
           />
         </div>
 

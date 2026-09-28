@@ -31,7 +31,7 @@ export async function POST(req: Request) {
       tenantId: ctx.tenantId,
       branchId: body.branchId,
       cashierId: ctx.userId,
-      customerId: body.customerId ?? null,
+      customerId: body.customerId,
       items: body.items,
       payments: body.payments,
     });

@@ -21,6 +21,10 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             </span>
           </Link>
           <div className="flex items-center gap-4 text-[13px]">
+            <nav className="flex items-center gap-4">
+              <Link href="/admin" className="text-muted hover:text-ink">Overview</Link>
+              <Link href="/admin/plans" className="text-muted hover:text-ink">Plans</Link>
+            </nav>
             <span className="hidden text-muted sm:inline">{session.name}</span>
             <LogoutButton endpoint="/api/admin/logout" to="/admin/login" />
           </div>

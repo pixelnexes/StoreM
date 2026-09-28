@@ -3,6 +3,7 @@ import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { AuthShell } from '@/components/AuthShell';
+import { AuthInput } from '@/components/AuthInput';
 
 function AuthForm() {
   const router = useRouter();
@@ -64,46 +65,44 @@ function AuthForm() {
         </p>
       </div>
 
-      <form onSubmit={submit} className="mt-7 space-y-4">
+      <form onSubmit={submit} className="mt-7 space-y-4" autoComplete="off">
         {tab === 'register' && (
           <>
             <div>
               <label className="label" htmlFor="name">Your name</label>
-              <input id="name" name="name" required className="input" placeholder="e.g. Ubaer" />
+              <AuthInput id="name" name="name" required className="input" placeholder="e.g. Ubaer" />
             </div>
             <div>
               <label className="label" htmlFor="businessName">Business name</label>
-              <input id="businessName" name="businessName" required className="input" placeholder="e.g. Ubaer General Store" />
+              <AuthInput id="businessName" name="businessName" required className="input" placeholder="e.g. Ubaer General Store" />
             </div>
             <div>
               <label className="label" htmlFor="email">Email <span className="font-normal text-muted">— optional</span></label>
-              <input id="email" name="email" type="email" className="input" placeholder="owner@store.com" />
+              <AuthInput id="email" name="email" type="email" className="input" placeholder="owner@store.com" />
             </div>
           </>
         )}
 
         <div>
           <label className="label" htmlFor="phone">Mobile number</label>
-          <input
+          <AuthInput
             id="phone"
             name="phone"
             required
             className="input tabular-nums"
             placeholder="03001234567"
-            defaultValue={tab === 'login' ? '03001234567' : ''}
           />
         </div>
 
         <div>
           <label className="label" htmlFor="password">Password</label>
-          <input
+          <AuthInput
             id="password"
             name="password"
             type="password"
             required
             className="input"
             placeholder="••••••••"
-            defaultValue={tab === 'login' ? 'owner1234' : ''}
           />
         </div>
 
