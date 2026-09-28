@@ -58,5 +58,19 @@ export async function GET() {
     await p.$disconnect().catch(() => {});
   }
 
-  return NextResponse.json({ env, probe });
+  let egressIp: string | null = null;
+  for (const url of ['https://api.ipify.org?format=json', 'https://httpbin.org/ip', 'https://ifconfig.me/ip']) {
+    try {
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), 8000);
+      const r = await fetch(url, { signal: ctrl.signal });
+      clearTimeout(t);
+      if (!r.ok) continue;
+      const text = (await r.text()).trim();
+      const m = text.match(/\b(?:\d{1,3}\.){3}\d{1,3}\b/);
+      if (m) { egressIp = m[0]; break; }
+    } catch { /* try next */ }
+  }
+
+  return NextResponse.json({ env, probe, egressIp });
 }
